@@ -1,0 +1,46 @@
+package math
+
+import (
+	"image/color"
+	"math"
+)
+
+type Vec3 struct {
+	X, Y, Z float64
+}
+
+func (v *Vec3) AsColor() color.RGBA {
+	return color.RGBA{uint8(255 * Clamp(v.X, 0.0, 1.0)), uint8(255 * Clamp(v.Y, 0.0, 1.0)), uint8(255 * Clamp(v.Z, 0.0, 1.0)), 255}
+}
+
+func (v *Vec3) Mul(t float64) *Vec3 {
+	return &Vec3{v.X * t, v.Y * t, v.Z * t}
+}
+
+func (v *Vec3) Add(a *Vec3) *Vec3 {
+	return &Vec3{v.X + a.X, v.Y + a.Y, v.Z + a.Z}
+}
+
+func (v *Vec3) Sub(a *Vec3) *Vec3 {
+	return &Vec3{v.X - a.X, v.Y - a.Y, v.Z - a.Z}
+}
+
+func Dot(a, b *Vec3) float64 {
+	return a.X*b.X + a.Y*b.Y + a.Z*b.Z
+}
+
+func (v *Vec3) Length2() float64 {
+	return Dot(v, v)
+}
+
+func (v *Vec3) Length() float64 {
+	return math.Sqrt(v.Length2())
+}
+
+func (v *Vec3) Normalize() *Vec3 {
+	length := v.Length()
+	if length == 0.0 {
+		return &Vec3{0.0, 0.0, 0.0}
+	}
+	return v.Mul(1.0 / length)
+}
