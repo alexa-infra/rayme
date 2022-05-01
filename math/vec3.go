@@ -5,6 +5,10 @@ import (
 	"math"
 )
 
+const (
+	eps = 1e-8
+)
+
 type Vec3 struct {
 	X, Y, Z float64
 }
@@ -15,6 +19,10 @@ func (v *Vec3) AsColor() color.RGBA {
 
 func (v *Vec3) Mul(t float64) *Vec3 {
 	return &Vec3{v.X * t, v.Y * t, v.Z * t}
+}
+
+func (v *Vec3) MulVec(a *Vec3) *Vec3 {
+	return &Vec3{v.X * a.X, v.Y * a.Y, v.Z * a.Z}
 }
 
 func (v *Vec3) Add(a *Vec3) *Vec3 {
@@ -43,4 +51,8 @@ func (v *Vec3) Normalize() *Vec3 {
 		return &Vec3{0.0, 0.0, 0.0}
 	}
 	return v.Mul(1.0 / length)
+}
+
+func (v *Vec3) NearZero() bool {
+	return Abs(v.X) < eps && Abs(v.Y) < eps && Abs(v.Z) < eps
 }

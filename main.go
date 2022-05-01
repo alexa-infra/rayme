@@ -39,20 +39,24 @@ func randomInUnitSphere() *Vec3 {
 	}
 }
 
+func randomUnitVector() *Vec3 {
+	return randomInUnitSphere().Normalize()
+}
+
 type HitRecord struct {
 	t         float64
 	p         Point3
 	n         Vec3
 	frontFace bool
+	Material  *Material
 }
 
-func MakeHitRecord(ray *Ray, root float64, point *Point3, normal *Vec3) *HitRecord {
+func MakeHitRecord(ray *Ray, root float64, point *Point3, normal *Vec3, material *Material) *HitRecord {
 	frontFace := Dot(&ray.Direction, normal) < 0
-	n := normal
 	if !frontFace {
-		n = normal.Mul(-1.0)
+		normal = normal.Mul(-1.0)
 	}
-	return &HitRecord{root, *point, *n, frontFace}
+	return &HitRecord{root, *point, *normal, frontFace, material}
 }
 
 type Hittable interface {
@@ -60,8 +64,9 @@ type Hittable interface {
 }
 
 type Sphere struct {
-	Center Point3
-	Radius float64
+	Center   Point3
+	Radius   float64
+	Material
 }
 
 func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -91,7 +96,7 @@ func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	}
 	hitPoint := ray.At(root)
 	normal := GetDirection(&this.Center, hitPoint).Mul(1.0 / this.Radius)
-	return true, MakeHitRecord(ray, root, hitPoint, normal)
+	return true, MakeHitRecord(ray, root, hitPoint, normal, &this.Material)
 }
 
 type HittableList struct {
@@ -116,10 +121,13 @@ func getRayColor(r *Ray, world Hittable, depth int) *Vec3 {
 	if depth <= 0 {
 		return &Vec3{ 0.0, 0.0, 0.0 }
 	}
-	hit, point := world.hit(r, 0.001, 1000)
+	hit, rec := world.hit(r, 0.001, 1000)
 	if hit {
-		target := point.p.Move(&point.n).Move(randomInUnitSphere())
-		return getRayColor(GetRay(&point.p, target), world, depth - 1).Mul(0.5)
+		scattered, attenuation, target := (*rec.Material).scatter(r, rec)
+		if !scattered {
+			return &Vec3{ 0.0, 0.0, 0.0 }
+		}
+		return getRayColor(target, world, depth - 1).MulVec(attenuation)
 	}
 	t := 0.5 * (r.Direction.Y + 1.0)
 	color1 := Vec3{1.0, 1.0, 1.0}
@@ -147,6 +155,38 @@ func (c *Camera) GetRay(u, v float64) *Ray {
 	return GetRay(&c.origin, target)
 }
 
+type Material interface {
+	scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray)
+}
+
+type Lambertian struct {
+	albedo Vec3
+}
+
+func (this *Lambertian) scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+	dir := rec.n.Add(randomUnitVector())
+	if dir.NearZero() {
+		dir = &rec.n
+	}
+	scattered := GetRay(&rec.p, rec.p.Move(dir))
+	return true, &this.albedo, scattered
+}
+
+func reflect(v, n *Vec3) *Vec3 {
+	dot := Dot(v, n)
+	return v.Add(n.Mul(-2.0 * dot))
+}
+
+type Metal struct {
+	albedo Vec3
+}
+
+func (this *Metal) scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+	reflected := reflect(&r.Direction, &rec.n)
+	scattered := GetRay(&rec.p, rec.p.Move(reflected))
+	return Dot(&scattered.Direction, &rec.n) > 0, &this.albedo, scattered
+}
+
 func main() {
 	samples := []Vec2{Vec2{0.0, 0.0}}
 	for i := 0; i < samplesPerPixel; i++ {
@@ -155,10 +195,17 @@ func main() {
 	}
 	camera := MakeCamera()
 
+	ground := &Lambertian{Vec3{0.8, 0.8, 0.0}}
+	center := &Lambertian{Vec3{0.7, 0.3, 0.3}}
+	left := &Metal{Vec3{0.8, 0.8, 0.8}}
+	right := &Metal{Vec3{0.8, 0.6, 0.2}}
+
 	world := &HittableList{
 		[]Hittable{
-			&Sphere{Point3{0.0, 0.0, -1.0}, 0.5},
-			&Sphere{Point3{0.0, -100.5, -1.0}, 100.0},
+			&Sphere{Point3{0.0, -100.5, -1.0}, 100.0, ground},
+			&Sphere{Point3{0.0, 0.0, -1.0}, 0.5, center},
+			&Sphere{Point3{-1.0, 0.0, -1.0}, 0.5, left},
+			&Sphere{Point3{ 1.0, 0.0, -1.0}, 0.5, right},
 		},
 	}
 

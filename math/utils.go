@@ -16,3 +16,10 @@ func Clamp(value, a, b float64) float64 {
 	}
 	return value
 }
+
+func Abs(value float64) float64 {
+	if value < 0.0 {
+		return -value
+	}
+	return value
+}
