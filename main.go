@@ -189,6 +189,43 @@ func (this *Metal) scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	return Dot(&scattered.Direction, &rec.n) > 0, &this.albedo, scattered
 }
 
+func refract(uv *Vec3, n *Vec3, angleFrac float64) *Vec3 {
+	cosTheta := Min(Dot(uv.Mul(-1.0), n), 1.0)
+	perp := uv.Add(n.Mul(cosTheta)).Mul(angleFrac)
+	parallel := n.Mul(-math.Sqrt(1.0 - perp.Length2()))
+	return perp.Add(parallel)
+}
+
+func reflectance(cosine float64, refIdx float64) float64 {
+	r0 := (1.0 - refIdx) / (1.0 + refIdx)
+	r0 = r0 * r0
+	return r0 + (1 - r0) * math.Pow(1 - cosine, 5)
+}
+
+type Dielectric struct {
+	ri float64 // Index of refraction
+}
+
+func (this *Dielectric) scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+	attenuation := &Vec3{1.0, 1.0, 1.0}
+	ratio := this.ri
+	if rec.frontFace {
+		ratio = 1.0 / this.ri
+	}
+	unitDirection := r.Direction.Normalize()
+	cosTheta := Min(Dot(unitDirection.Mul(-1.0), &rec.n), 1.0)
+	sinTheta := math.Sqrt(1.0 - cosTheta*cosTheta)
+	cannotRefract := ratio * sinTheta > 1.0
+	var dir *Vec3 = nil
+	if cannotRefract || reflectance(cosTheta, ratio) > randGen.Float64() {
+		dir = reflect(unitDirection, &rec.n)
+	} else {
+		dir = refract(unitDirection, &rec.n, ratio)
+	}
+	scattered := GetRay(&rec.p, rec.p.Move(dir))
+	return true, attenuation, scattered
+}
+
 func main() {
 	samples := []Vec2{Vec2{0.0, 0.0}}
 	for i := 0; i < samplesPerPixel; i++ {
@@ -198,8 +235,8 @@ func main() {
 	camera := MakeCamera()
 
 	ground := &Lambertian{Vec3{0.8, 0.8, 0.0}}
-	center := &Lambertian{Vec3{0.7, 0.3, 0.3}}
-	left := &Metal{Vec3{0.8, 0.8, 0.8}, 0.3}
+	center := &Lambertian{Vec3{0.1, 0.2, 0.5}}
+	left := &Dielectric{1.5}
 	right := &Metal{Vec3{0.8, 0.6, 0.2}, 1.0}
 
 	world := &HittableList{
@@ -207,6 +244,7 @@ func main() {
 			&Sphere{Point3{0.0, -100.5, -1.0}, 100.0, ground},
 			&Sphere{Point3{0.0, 0.0, -1.0}, 0.5, center},
 			&Sphere{Point3{-1.0, 0.0, -1.0}, 0.5, left},
+			&Sphere{Point3{-1.0, 0.0, -1.0}, -0.4, left},
 			&Sphere{Point3{ 1.0, 0.0, -1.0}, 0.5, right},
 		},
 	}
