@@ -179,11 +179,13 @@ func reflect(v, n *Vec3) *Vec3 {
 
 type Metal struct {
 	albedo Vec3
+	fuzz   float64
 }
 
 func (this *Metal) scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	reflected := reflect(&r.Direction, &rec.n)
-	scattered := GetRay(&rec.p, rec.p.Move(reflected))
+	fuzz := randomInUnitSphere().Mul(this.fuzz)
+	scattered := GetRay(&rec.p, rec.p.Move(reflected.Add(fuzz)))
 	return Dot(&scattered.Direction, &rec.n) > 0, &this.albedo, scattered
 }
 
@@ -197,8 +199,8 @@ func main() {
 
 	ground := &Lambertian{Vec3{0.8, 0.8, 0.0}}
 	center := &Lambertian{Vec3{0.7, 0.3, 0.3}}
-	left := &Metal{Vec3{0.8, 0.8, 0.8}}
-	right := &Metal{Vec3{0.8, 0.6, 0.2}}
+	left := &Metal{Vec3{0.8, 0.8, 0.8}, 0.3}
+	right := &Metal{Vec3{0.8, 0.6, 0.2}, 1.0}
 
 	world := &HittableList{
 		[]Hittable{
