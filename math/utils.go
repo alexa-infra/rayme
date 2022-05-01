@@ -1,5 +1,7 @@
 package math
 
+import "math"
+
 func Min(a, b float64) float64 {
 	if a < b {
 		return a
@@ -22,4 +24,8 @@ func Abs(value float64) float64 {
 		return -value
 	}
 	return value
+}
+
+func DegreesToRadians(degrees float64) float64 {
+    return degrees * math.Pi / 180.0
 }

@@ -14,8 +14,6 @@ const (
 	aspectRatio     = 16.0 / 9.0
 	imageWidth      = 400
 	imageHeight     = int(imageWidth / aspectRatio)
-	viewportHeight  = 2.0
-	viewportWidth   = aspectRatio * viewportHeight
 	focalLength     = 1.0
 	samplesPerPixel = 12
 	maxDepth        = 50
@@ -142,12 +140,19 @@ type Camera struct {
 	lowerLeftCorner Point3
 }
 
-func MakeCamera() *Camera {
-	origin := Point3{0.0, 0.0, 0.0}
-	horizontal := Vec3{viewportWidth, 0.0, 0.0}
-	vertical := Vec3{0.0, viewportHeight, 0.0}
-	lowerLeftCorner := origin.Move(horizontal.Mul(-0.5)).Move(vertical.Mul(-0.5)).Move(&Vec3{0.0, 0.0, -focalLength})
-	return &Camera{origin, horizontal, vertical, *lowerLeftCorner}
+func MakeCamera(lookFrom, lookAt Point3, vup Vec3, vfov float64, aspectRatio float64) *Camera {
+	theta := DegreesToRadians(vfov)
+	h := math.Tan(theta / 2.0)
+	viewportHeight := 2.0 * h
+	viewportWidth := aspectRatio * viewportHeight
+	w := GetDirection(&lookAt, &lookFrom).Normalize() // note, negative
+	u := Cross(&vup, w).Normalize()
+	v := Cross(w, u)
+	origin := lookFrom
+	horizontal := u.Mul(viewportWidth)
+	vertical := v.Mul(viewportHeight)
+	lowerLeftCorner := origin.Move(horizontal.Mul(-0.5)).Move(vertical.Mul(-0.5)).Move(w.Mul(-1.0))
+	return &Camera{origin, *horizontal, *vertical, *lowerLeftCorner}
 }
 
 func (c *Camera) GetRay(u, v float64) *Ray {
@@ -232,12 +237,12 @@ func main() {
 		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
 		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
-	camera := MakeCamera()
+	camera := MakeCamera(Point3{-2,2,1}, Point3{0,0,-1}, Vec3{0,1,0}, 20.0, aspectRatio)
 
 	ground := &Lambertian{Vec3{0.8, 0.8, 0.0}}
 	center := &Lambertian{Vec3{0.1, 0.2, 0.5}}
 	left := &Dielectric{1.5}
-	right := &Metal{Vec3{0.8, 0.6, 0.2}, 1.0}
+	right := &Metal{Vec3{0.8, 0.6, 0.2}, 0.0}
 
 	world := &HittableList{
 		[]Hittable{
