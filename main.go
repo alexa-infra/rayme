@@ -37,6 +37,18 @@ func randomInUnitSphere() *Vec3 {
 	}
 }
 
+func randomInUnitDisk() *Vec3 {
+	for {
+		x := (randGen.Float64() - 0.5) * 2.0
+		y := (randGen.Float64() - 0.5) * 2.0
+		v := &Vec3{ x, y, 0.0 }
+		if v.Length2() >= 1.0 {
+			continue
+		}
+		return v
+	}
+}
+
 func randomUnitVector() *Vec3 {
 	return randomInUnitSphere().Normalize()
 }
@@ -138,9 +150,11 @@ type Camera struct {
 	horizontal      Vec3
 	vertical        Vec3
 	lowerLeftCorner Point3
+	u, v, w         Vec3
+	lensRadius      float64
 }
 
-func MakeCamera(lookFrom, lookAt Point3, vup Vec3, vfov float64, aspectRatio float64) *Camera {
+func MakeCamera(lookFrom, lookAt Point3, vup Vec3, vfov float64, aspectRatio float64, aperture float64, focusDist float64) *Camera {
 	theta := DegreesToRadians(vfov)
 	h := math.Tan(theta / 2.0)
 	viewportHeight := 2.0 * h
@@ -149,15 +163,18 @@ func MakeCamera(lookFrom, lookAt Point3, vup Vec3, vfov float64, aspectRatio flo
 	u := Cross(&vup, w).Normalize()
 	v := Cross(w, u)
 	origin := lookFrom
-	horizontal := u.Mul(viewportWidth)
-	vertical := v.Mul(viewportHeight)
-	lowerLeftCorner := origin.Move(horizontal.Mul(-0.5)).Move(vertical.Mul(-0.5)).Move(w.Mul(-1.0))
-	return &Camera{origin, *horizontal, *vertical, *lowerLeftCorner}
+	horizontal := u.Mul(viewportWidth).Mul(focusDist)
+	vertical := v.Mul(viewportHeight).Mul(focusDist)
+	lowerLeftCorner := origin.Move(horizontal.Mul(-0.5)).Move(vertical.Mul(-0.5)).Move(w.Mul(-1.0).Mul(focusDist))
+	lensRadius := aperture / 2.0
+	return &Camera{origin, *horizontal, *vertical, *lowerLeftCorner, *u, *v, *w, lensRadius}
 }
 
-func (c *Camera) GetRay(u, v float64) *Ray {
-	target := c.lowerLeftCorner.Move(c.horizontal.Mul(u)).Move(c.vertical.Mul(v))
-	return GetRay(&c.origin, target)
+func (c *Camera) GetRay(s, t float64) *Ray {
+	rd := randomInUnitDisk().Mul(c.lensRadius);
+	offset := c.u.Mul(rd.X).Add(c.v.Mul(rd.Y));
+	target := c.lowerLeftCorner.Move(c.horizontal.Mul(s)).Move(c.vertical.Mul(t))
+	return GetRay(c.origin.Move(offset), target)
 }
 
 type Material interface {
@@ -237,7 +254,7 @@ func main() {
 		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
 		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
-	camera := MakeCamera(Point3{-2,2,1}, Point3{0,0,-1}, Vec3{0,1,0}, 20.0, aspectRatio)
+	camera := MakeCamera(Point3{-2,2,1}, Point3{0,0,-1}, Vec3{0,1,0}, 20.0, aspectRatio, 0.1, 3.0)
 
 	ground := &Lambertian{Vec3{0.8, 0.8, 0.0}}
 	center := &Lambertian{Vec3{0.1, 0.2, 0.5}}
