@@ -11,3 +11,7 @@ func (p *Point3) Move(v *Vec3) *Point3 {
 func GetDirection(a, b *Point3) *Vec3 {
 	return &Vec3{b.X - a.X, b.Y - a.Y, b.Z - a.Z}
 }
+
+func Distance(a, b *Point3) float64 {
+	return GetDirection(a, b).Length()
+}

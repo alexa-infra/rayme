@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	aspectRatio     = 16.0 / 9.0
-	imageWidth      = 400
+	aspectRatio     = 3.0 / 2.0
+	imageWidth      = 480
 	imageHeight     = int(imageWidth / aspectRatio)
 	focalLength     = 1.0
-	samplesPerPixel = 12
+	samplesPerPixel = 100
 	maxDepth        = 50
 	vfov            = 20.0
 	aperture        = 0.1
@@ -28,22 +28,50 @@ func main() {
 		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
 		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
-	camera := MakeCamera(Point3{-2,2,1}, Point3{0,0,-1}, Vec3{0,1,0}, vfov, aspectRatio, aperture, distToFocus)
+	camera := MakeCamera(Point3{13,2,3}, Point3{0,0,0}, Vec3{0,1,0}, vfov, aspectRatio, aperture, distToFocus)
 
-	ground := MakeLambertian(Vec3{0.8, 0.8, 0.0})
-	center := MakeLambertian(Vec3{0.1, 0.2, 0.5})
-	left := MakeDielectric(1.5)
-	right := MakeMetal(Vec3{0.8, 0.6, 0.2}, 0.0)
+	ground := MakeLambertian(Vec3{0.5, 0.5, 0.5})
+	glass := MakeDielectric(1.5)
 
 	world := &HittableList{
 		[]Hittable{
-			&Sphere{Point3{0.0, -100.5, -1.0}, 100.0, ground},
-			&Sphere{Point3{0.0, 0.0, -1.0}, 0.5, center},
-			&Sphere{Point3{-1.0, 0.0, -1.0}, 0.5, left},
-			&Sphere{Point3{-1.0, 0.0, -1.0}, -0.4, left},
-			&Sphere{Point3{ 1.0, 0.0, -1.0}, 0.5, right},
+			&Sphere{Point3{0.0, -1000, 0.0}, 1000.0, ground},
 		},
 	}
+	ref := Point3{4, 0.2, 0}
+	for a := -11; a < 11; a++ {
+		for b := -11; b < 11; b++ {
+			chooseMat := RandGen.Float64()
+			center := Point3{float64(a) + 0.9*RandGen.Float64(), 0.2, float64(b) + 0.9*RandGen.Float64()}
+			if Distance(&center, &ref) > 0.9 {
+				if chooseMat < 0.8 {
+					albedo := Vec3{RandGen.Float64(), RandGen.Float64(), RandGen.Float64()}
+					mat := MakeLambertian(albedo)
+					sphere := &Sphere{center, 0.2, mat}
+					world.Objects = append(world.Objects, sphere)
+				} else if chooseMat > 0.95 {
+					albedo := Vec3{RandGen.Float64() / 2.0 + 0.5, RandGen.Float64() / 2.0 + 0.5, RandGen.Float64() / 2.0 + 0.5}
+					fuzz := RandGen.Float64() / 2.0
+					mat := MakeMetal(albedo, fuzz)
+					sphere := &Sphere{center, 0.2, mat}
+					world.Objects = append(world.Objects, sphere)
+				} else {
+					sphere := &Sphere{center, 0.2, glass}
+					world.Objects = append(world.Objects, sphere)
+				}
+			}
+
+		}
+	}
+
+	material2 := MakeLambertian(Vec3{0.4, 0.2, 0.1})
+	material3 := MakeMetal(Vec3{0.7, 0.6, 0.5}, 0.0)
+	sphere1 := &Sphere{Point3{0, 1, 0}, 1.0, glass}
+	sphere2 := &Sphere{Point3{-4, 1, 0}, 1.0, material2}
+	sphere3 := &Sphere{Point3{4, 1, 0}, 1.0, material3}
+	world.Objects = append(world.Objects, sphere1)
+	world.Objects = append(world.Objects, sphere2)
+	world.Objects = append(world.Objects, sphere3)
 
 	myImg := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
 	for j := 0; j < imageHeight; j++ {
