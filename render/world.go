@@ -61,6 +61,49 @@ func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	return true, MakeHitRecord(ray, root, hitPoint, normal, &this.Material)
 }
 
+type MovingSphere struct {
+	Center0, Center1 Point3
+	Radius           float64
+	Time0, Time1     float64
+	Material
+}
+
+func (this *MovingSphere) center(time float64) *Point3 {
+	scale := (time - this.Time0) / (this.Time1 - this.Time0)
+	dir := GetDirection(&this.Center0, &this.Center1)
+	return this.Center0.Move(dir.Mul(scale))
+}
+
+func (this *MovingSphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	oc := GetDirection(this.center(ray.Time), &ray.Origin)
+	a := Dot(&ray.Direction, &ray.Direction)
+	h := Dot(oc, &ray.Direction)
+	c := Dot(oc, oc) - this.Radius*this.Radius
+	discriminant := h*h - a*c
+	if discriminant < 0 {
+		return false, nil
+	}
+	root1 := (-h - math.Sqrt(discriminant)) / a
+	root2 := (-h + math.Sqrt(discriminant)) / a
+	root := 0.0
+	if root1 < tMin || root1 > tMax {
+		if root2 >= tMin && root2 <= tMax {
+			root = root2
+		} else {
+			return false, nil
+		}
+	} else {
+		if root2 >= tMin && root2 <= tMax {
+			root = Min(root1, root2)
+		} else {
+			root = root1
+		}
+	}
+	hitPoint := ray.At(root)
+	normal := GetDirection(this.center(ray.Time), hitPoint).Mul(1.0 / this.Radius)
+	return true, MakeHitRecord(ray, root, hitPoint, normal, &this.Material)
+}
+
 type HittableList struct {
 	Objects []Hittable
 }

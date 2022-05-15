@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	aspectRatio     = 3.0 / 2.0
-	imageWidth      = 480
+	aspectRatio     = 16.0 / 9.0
+	imageWidth      = 400
 	imageHeight     = int(imageWidth / aspectRatio)
 	focalLength     = 1.0
-	samplesPerPixel = 100
+	samplesPerPixel = 12
 	maxDepth        = 50
 	vfov            = 20.0
 	aperture        = 0.1
@@ -28,7 +28,7 @@ func main() {
 		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
 		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
-	camera := MakeCamera(Point3{13,2,3}, Point3{0,0,0}, Vec3{0,1,0}, vfov, aspectRatio, aperture, distToFocus)
+	camera := MakeCamera(Point3{13,2,3}, Point3{0,0,0}, Vec3{0,1,0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 0.1)
 
 	ground := MakeLambertian(Vec3{0.5, 0.5, 0.5})
 	glass := MakeDielectric(1.5)
@@ -47,7 +47,8 @@ func main() {
 				if chooseMat < 0.8 {
 					albedo := Vec3{RandGen.Float64(), RandGen.Float64(), RandGen.Float64()}
 					mat := MakeLambertian(albedo)
-					sphere := &Sphere{center, 0.2, mat}
+					center2 := center.Move(&Vec3{0, RandGen.Float64() * 0.5, 0.0})
+					sphere := &MovingSphere{center, *center2, 0.2, 0.0, 0.1, mat}
 					world.Objects = append(world.Objects, sphere)
 				} else if chooseMat > 0.95 {
 					albedo := Vec3{RandGen.Float64() / 2.0 + 0.5, RandGen.Float64() / 2.0 + 0.5, RandGen.Float64() / 2.0 + 0.5}
@@ -80,7 +81,7 @@ func main() {
 			for _, s := range samples {
 				u := (float64(i) + s.X) / float64(imageWidth-1)
 				v := (float64(j) + s.Y) / float64(imageHeight-1)
-				ray := camera.GetRay(u, v)
+				ray := camera.CastRay(u, v)
 				rayColor := GetRayColor(ray, world, maxDepth)
 				sumColor = sumColor.Add(rayColor)
 			}

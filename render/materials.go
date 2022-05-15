@@ -22,7 +22,7 @@ func (this *Lambertian) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	if dir.NearZero() {
 		dir = &rec.n
 	}
-	scattered := GetRay(&rec.p, rec.p.Move(dir))
+	scattered := MakeRayFromDirection(&rec.p, dir, r.Time)
 	return true, &this.albedo, scattered
 }
 
@@ -41,9 +41,9 @@ func MakeMetal(albedo Vec3, fuzz float64) *Metal {
 }
 
 func (this *Metal) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
-	reflected := reflect(&r.Direction, &rec.n)
 	fuzz := RandomInUnitSphere().Mul(this.fuzz)
-	scattered := GetRay(&rec.p, rec.p.Move(reflected.Add(fuzz)))
+	reflected := reflect(&r.Direction, &rec.n).Add(fuzz)
+	scattered := MakeRayFromDirection(&rec.p, reflected, r.Time)
 	return Dot(&scattered.Direction, &rec.n) > 0, &this.albedo, scattered
 }
 
@@ -84,6 +84,6 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	} else {
 		dir = refract(unitDirection, &rec.n, ratio)
 	}
-	scattered := GetRay(&rec.p, rec.p.Move(dir))
+	scattered := MakeRayFromDirection(&rec.p, dir, r.Time)
 	return true, attenuation, scattered
 }

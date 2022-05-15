@@ -6,6 +6,11 @@ var (
 	RandGen = rand.New(rand.NewSource(99))
 )
 
+func RandomBetween(a, b float64) float64 {
+	// [0, 1] -> [0, b - a] -> [a, b]
+	return RandGen.Float64() * (b - a) + a
+}
+
 func RandomInUnitSphere() *Vec3 {
 	for {
 		// [0, 1] -> [-0.5, 0.5] -> [-1, 1]
