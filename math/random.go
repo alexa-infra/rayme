@@ -8,7 +8,7 @@ var (
 
 func RandomBetween(a, b float64) float64 {
 	// [0, 1] -> [0, b - a] -> [a, b]
-	return RandGen.Float64() * (b - a) + a
+	return RandGen.Float64()*(b-a) + a
 }
 
 func RandomInUnitSphere() *Vec3 {
@@ -17,7 +17,7 @@ func RandomInUnitSphere() *Vec3 {
 		x := (RandGen.Float64() - 0.5) * 2.0
 		y := (RandGen.Float64() - 0.5) * 2.0
 		z := (RandGen.Float64() - 0.5) * 2.0
-		v := &Vec3{ x, y, z }
+		v := &Vec3{x, y, z}
 		if v.Length2() >= 1.0 {
 			continue
 		}
@@ -29,7 +29,7 @@ func RandomInUnitDisk() *Vec3 {
 	for {
 		x := (RandGen.Float64() - 0.5) * 2.0
 		y := (RandGen.Float64() - 0.5) * 2.0
-		v := &Vec3{ x, y, 0.0 }
+		v := &Vec3{x, y, 0.0}
 		if v.Length2() >= 1.0 {
 			continue
 		}

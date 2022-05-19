@@ -58,7 +58,7 @@ func (v *Vec3) NearZero() bool {
 }
 
 func Cross(u, v *Vec3) *Vec3 {
-    return &Vec3{u.Y * v.Z - u.Z * v.Y,
-                 u.Z * v.X - u.X * v.Z,
-                 u.X * v.Y - u.Y * v.X}
+	return &Vec3{u.Y*v.Z - u.Z*v.Y,
+		u.Z*v.X - u.X*v.Z,
+		u.X*v.Y - u.Y*v.X}
 }
