@@ -1,14 +1,19 @@
 package math
 
-import "math/rand"
+import (
+	"math/rand"
+	"sync"
+)
 
 var (
-	RandGen = rand.New(rand.NewSource(99))
+	randGen = rand.New(rand.NewSource(99))
+	mutex   = new(sync.Mutex)
 )
 
 func RandomBetween(a, b float64) float64 {
-	// [0, 1] -> [0, b - a] -> [a, b]
-	return RandGen.Float64()*(b-a) + a
+	mutex.Lock()
+	defer mutex.Unlock()
+	return randGen.Float64()*(b-a) + a
 }
 
 func RandomInUnitSphere() *Vec3 {

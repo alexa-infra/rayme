@@ -16,7 +16,7 @@ const (
 	imageWidth      = 400
 	imageHeight     = int(imageWidth / aspectRatio)
 	focalLength     = 1.0
-	samplesPerPixel = 32
+	samplesPerPixel = 12
 	maxDepth        = 50
 	vfov            = 20.0
 	aperture        = 0.1
@@ -27,9 +27,9 @@ func main() {
 	samples := []Vec2{Vec2{0.0, 0.0}}
 	for i := 0; i < samplesPerPixel; i++ {
 		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
-		samples = append(samples, Vec2{math.Cos(angle), math.Sin(angle)})
+		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
-	camera := MakeCamera(&Point3{13, 2, 3}, &Point3{0, 0, 0}, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 0.1)
+	camera := MakeCamera(&Point3{13, 2, 3}, &Point3{0, 0, 0}, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
 
 	ground := MakeLambertian(&Vec3{0.5, 0.5, 0.5})
 	glass := MakeDielectric(1.5)
@@ -80,23 +80,29 @@ func main() {
 	world.Objects = append(world.Objects, sphere2)
 	world.Objects = append(world.Objects, sphere3)
 
-	nRenders := int64(0)
-	sumMicroseconds := int64(0)
 	startFull := time.Now()
+
+	render := func(u, v float64, out chan *Vec3) {
+		ray := camera.CastRay(u, v)
+		rayColor := GetRayColor(ray, world, maxDepth)
+		out <- rayColor
+	}
+
 	myImg := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
 	for j := 0; j < imageHeight; j++ {
 		for i := 0; i < imageWidth; i++ {
-			sumColor := &Vec3{0, 0, 0}
+			channel := make(chan *Vec3)
 			for _, s := range samples {
 				u := (float64(i) + s.X) / float64(imageWidth-1)
 				v := (float64(j) + s.Y) / float64(imageHeight-1)
-				ray := camera.CastRay(u, v)
-				start := time.Now()
-				rayColor := GetRayColor(ray, world, maxDepth)
-				sumMicroseconds += time.Since(start).Microseconds()
-				nRenders++
+				go render(u, v, channel)
+			}
+			sumColor := &Vec3{0, 0, 0}
+			for k := 0; k < len(samples); k++ {
+				rayColor := <-channel
 				sumColor = sumColor.Add(rayColor)
 			}
+			close(channel)
 			scale := 1.0 / float64(len(samples))
 			sumColor = &Vec3{
 				math.Sqrt(sumColor.X * scale),
@@ -107,8 +113,6 @@ func main() {
 		}
 	}
 	fmt.Println("Full time:", time.Since(startFull).Seconds(), "seconds")
-	fmt.Println("Number of rays:", nRenders)
-	fmt.Println("Avg ray:", sumMicroseconds / nRenders, "microseconds")
 	out, err := os.Create("output.png")
 	if err != nil {
 		fmt.Println("can't open file to write")
