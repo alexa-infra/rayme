@@ -79,7 +79,7 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	sinTheta := math.Sqrt(1.0 - cosTheta*cosTheta)
 	cannotRefract := ratio*sinTheta > 1.0
 	var dir *Vec3 = nil
-	if cannotRefract || reflectance(cosTheta, ratio) > RandGen.Float64() {
+	if cannotRefract || reflectance(cosTheta, ratio) > RandomBetween(0.0, 1.0) {
 		dir = reflect(unitDirection, rec.n)
 	} else {
 		dir = refract(unitDirection, rec.n, ratio)

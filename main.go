@@ -42,18 +42,23 @@ func main() {
 	ref := &Point3{4, 0.2, 0}
 	for a := -11; a < 11; a++ {
 		for b := -11; b < 11; b++ {
-			chooseMat := RandGen.Float64()
-			center := &Point3{float64(a) + 0.9*RandGen.Float64(), 0.2, float64(b) + 0.9*RandGen.Float64()}
+			chooseMat := RandomBetween(0.0, 1.0)
+			center := &Point3{float64(a) + RandomBetween(0.0, 0.9), 0.2, float64(b) + RandomBetween(0.0, 0.9)}
 			if Distance(center, ref) > 0.9 {
 				if chooseMat < 0.8 {
-					albedo := &Vec3{RandGen.Float64(), RandGen.Float64(), RandGen.Float64()}
+					albedo := RandomInUnitSphere()
 					mat := MakeLambertian(albedo)
-					center2 := center.Move(&Vec3{0, RandGen.Float64() * 0.5, 0.0})
-					sphere := &MovingSphere{center, center2, 0.2, 0.0, 0.1, mat}
-					world.Objects = append(world.Objects, sphere)
+					if chooseMat > 0.7 {
+						center2 := center.Move(&Vec3{0, RandomBetween(0.0, 0.5), 0.0})
+						sphere := &MovingSphere{center, center2, 0.2, 0.0, 1.0, mat}
+						world.Objects = append(world.Objects, sphere)
+					} else {
+						sphere := &Sphere{center, 0.2, mat}
+						world.Objects = append(world.Objects, sphere)
+					}
 				} else if chooseMat > 0.95 {
-					albedo := &Vec3{RandGen.Float64()/2.0 + 0.5, RandGen.Float64()/2.0 + 0.5, RandGen.Float64()/2.0 + 0.5}
-					fuzz := RandGen.Float64() / 2.0
+					albedo := &Vec3{RandomBetween(0.5, 1.0), RandomBetween(0.5, 1.0), RandomBetween(0.5, 1.0)}
+					fuzz := RandomBetween(0.0, 0.5)
 					mat := MakeMetal(albedo, fuzz)
 					sphere := &Sphere{center, 0.2, mat}
 					world.Objects = append(world.Objects, sphere)
