@@ -16,6 +16,12 @@ func RandomBetween(a, b float64) float64 {
 	return randGen.Float64()*(b-a) + a
 }
 
+func RandomInt(n int) int {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return randGen.Intn(n)
+}
+
 func RandomInUnitSphere() *Vec3 {
 	for {
 		x := RandomBetween(-1.0, 1.0)

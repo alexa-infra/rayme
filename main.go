@@ -80,11 +80,13 @@ func main() {
 	world.Objects = append(world.Objects, sphere2)
 	world.Objects = append(world.Objects, sphere3)
 
+	bvh := MakeBvhFromList(world, 0.0, 1.0)
+
 	startFull := time.Now()
 
 	render := func(u, v float64, out chan *Vec3) {
 		ray := camera.CastRay(u, v)
-		rayColor := GetRayColor(ray, world, maxDepth)
+		rayColor := GetRayColor(ray, bvh, maxDepth)
 		out <- rayColor
 	}
 

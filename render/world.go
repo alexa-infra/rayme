@@ -23,6 +23,7 @@ func MakeHitRecord(ray *Ray, root float64, point *Point3, normal *Vec3, material
 
 type Hittable interface {
 	hit(r *Ray, tMin, tMax float64) (bool, *HitRecord)
+	boundingBox(t0, t1 float64) (bool, *Aabb)
 }
 
 type Sphere struct {
@@ -59,6 +60,16 @@ func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	hitPoint := ray.At(root)
 	normal := GetDirection(this.Center, hitPoint).Mul(1.0 / this.Radius)
 	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material)
+}
+
+func (this *Sphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	r := this.Radius * math.Sqrt2
+	radius := &Vec3{r, r, r}
+	aabb := &Aabb{
+		this.Center.Move(radius.Mul(-1)),
+		this.Center.Move(radius),
+	}
+	return true, aabb
 }
 
 type MovingSphere struct {
@@ -104,6 +115,22 @@ func (this *MovingSphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material)
 }
 
+func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	r := this.Radius * math.Sqrt2
+	radius := &Vec3{r, r, r}
+	center0 := this.center(t0)
+	aabb0 := &Aabb{
+		center0.Move(radius.Mul(-1)),
+		center0.Move(radius),
+	}
+	center1 := this.center(t1)
+	aabb1 := &Aabb{
+		center1.Move(radius.Mul(-1)),
+		center1.Move(radius),
+	}
+	return true, SurroundingBox(aabb0, aabb1)
+}
+
 type HittableList struct {
 	Objects []Hittable
 }
@@ -120,6 +147,23 @@ func (this *HittableList) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 		}
 	}
 	return closest != nil, closest
+}
+
+func (this *HittableList) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	found := false
+	var surrounding *Aabb
+	for _, obj := range this.Objects {
+		ok, aabb := obj.boundingBox(t0, t1)
+		if ok {
+			if !found {
+				surrounding = aabb
+				found = true
+			} else {
+				surrounding = SurroundingBox(surrounding, aabb)
+			}
+		}
+	}
+	return found, surrounding
 }
 
 func GetRayColor(r *Ray, world Hittable, depth int) *Vec3 {
