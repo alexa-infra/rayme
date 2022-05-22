@@ -31,7 +31,7 @@ func main() {
 	}
 	camera := MakeCamera(&Point3{13, 2, 3}, &Point3{0, 0, 0}, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
 
-	ground := MakeLambertian(&Vec3{0.5, 0.5, 0.5})
+	ground := MakeLambertianTexture(MakeCheckerTexture(&Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9}))
 	glass := MakeDielectric(1.5)
 
 	world := &HittableList{
@@ -47,7 +47,7 @@ func main() {
 			if Distance(center, ref) > 0.9 {
 				if chooseMat < 0.8 {
 					albedo := RandomInUnitSphere()
-					mat := MakeLambertian(albedo)
+					mat := MakeLambertianSolidColor(albedo)
 					if chooseMat > 0.7 {
 						center2 := center.Move(&Vec3{0, RandomBetween(0.0, 0.5), 0.0})
 						sphere := &MovingSphere{center, center2, 0.2, 0.0, 1.0, mat}
@@ -71,7 +71,7 @@ func main() {
 		}
 	}
 
-	material2 := MakeLambertian(&Vec3{0.4, 0.2, 0.1})
+	material2 := MakeLambertianSolidColor(&Vec3{0.4, 0.2, 0.1})
 	material3 := MakeMetal(&Vec3{0.7, 0.6, 0.5}, 0.0)
 	sphere1 := &Sphere{&Point3{0, 1, 0}, 1.0, glass}
 	sphere2 := &Sphere{&Point3{-4, 1, 0}, 1.0, material2}

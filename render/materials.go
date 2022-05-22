@@ -10,11 +10,16 @@ type Material interface {
 }
 
 type Lambertian struct {
-	albedo *Vec3
+	albedo Texture
 }
 
-func MakeLambertian(albedo *Vec3) *Lambertian {
-	return &Lambertian{albedo}
+func MakeLambertianSolidColor(albedo *Vec3) *Lambertian {
+	t := MakeSolidColor(albedo)
+	return &Lambertian{t}
+}
+
+func MakeLambertianTexture(t Texture) *Lambertian {
+	return &Lambertian{t}
 }
 
 func (this *Lambertian) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
@@ -23,7 +28,8 @@ func (this *Lambertian) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 		dir = rec.n
 	}
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
-	return true, this.albedo, scattered
+	attenuation := this.albedo.GetValue(rec.u, rec.v, rec.p)
+	return true, attenuation, scattered
 }
 
 func reflect(v, n *Vec3) *Vec3 {
