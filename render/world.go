@@ -11,7 +11,7 @@ type HitRecord struct {
 	n         *Vec3
 	frontFace bool
 	Material
-	u, v      float64
+	u, v float64
 }
 
 func MakeHitRecord(ray *Ray, root float64, point *Point3, normal *Vec3, material Material, u, v float64) *HitRecord {
@@ -36,7 +36,7 @@ type Sphere struct {
 func (this *Sphere) getUv(p *Point3) (u, v float64) {
 	theta := math.Acos(-p.Y)
 	phi := math.Atan2(-p.Z, p.X) + math.Pi
-	u = phi / (2*math.Pi)
+	u = phi / (2 * math.Pi)
 	v = theta / math.Pi
 	return
 }
@@ -145,7 +145,7 @@ func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 func (this *MovingSphere) getUv(p *Point3) (u, v float64) {
 	theta := math.Acos(-p.Y)
 	phi := math.Atan2(-p.Z, p.X) + math.Pi
-	u = phi / (2*math.Pi)
+	u = phi / (2 * math.Pi)
 	v = theta / math.Pi
 	return
 }

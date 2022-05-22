@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	. "github.com/alexa-infra/rayme/math"
 	. "github.com/alexa-infra/rayme/render"
@@ -9,7 +10,6 @@ import (
 	"math"
 	"os"
 	"time"
-	"flag"
 )
 
 const (
@@ -23,12 +23,12 @@ const (
 )
 
 var (
-	sceneID = flag.Int("scene", 0, "Scene ID")
-	lookFrom *Point3 = nil
-	lookAt   *Point3 = nil
-	vfov             = 20.0
-	aperture         = 0.0
-	world Hittable   = nil
+	sceneID           = flag.Int("scene", 0, "Scene ID")
+	lookFrom *Point3  = nil
+	lookAt   *Point3  = nil
+	vfov              = 20.0
+	aperture          = 0.0
+	world    Hittable = nil
 )
 
 func main() {
@@ -159,7 +159,7 @@ func twoSpheresScene() Hittable {
 	world := &HittableList{
 		[]Hittable{
 			&Sphere{&Point3{0.0, -10, 0.0}, 10.0, material},
-			&Sphere{&Point3{0.0,  10, 0.0}, 10.0, material},
+			&Sphere{&Point3{0.0, 10, 0.0}, 10.0, material},
 		},
 	}
 	return world

@@ -18,7 +18,7 @@ func (this *SolidColor) GetValue(u, v float64, p *Point3) *Vec3 {
 }
 
 func MakeSolidColor(color *Vec3) *SolidColor {
-	return &SolidColor{ color }
+	return &SolidColor{color}
 }
 
 type CheckerTexture struct {
@@ -26,11 +26,11 @@ type CheckerTexture struct {
 }
 
 func MakeCheckerTexture(odd, even *Vec3) *CheckerTexture {
-	return &CheckerTexture{ odd, even }
+	return &CheckerTexture{odd, even}
 }
 
 func (this *CheckerTexture) GetValue(u, v float64, p *Point3) *Vec3 {
-	sines := math.Sin(10*p.X)*math.Sin(10*p.Y)*math.Sin(10*p.Z)
+	sines := math.Sin(10*p.X) * math.Sin(10*p.Y) * math.Sin(10*p.Z)
 	if sines < 0 {
 		return this.odd
 	}
