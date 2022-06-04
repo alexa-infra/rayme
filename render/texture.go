@@ -36,3 +36,18 @@ func (this *CheckerTexture) GetValue(u, v float64, p *Point3) *Vec3 {
 	}
 	return this.even
 }
+
+type NoiseTexture struct {
+	perlin *Perlin
+	scale float64
+}
+
+func MakeNoiseTexture(scale float64) *NoiseTexture {
+	return &NoiseTexture{MakePerlin(), scale}
+}
+
+func (this *NoiseTexture) GetValue(u, v float64, p *Point3) *Vec3 {
+	ps := &Point3{p.X * this.scale, p.Y * this.scale, p.Z * this.scale}
+	noise := this.perlin.Turb(ps, 7)
+	return &Vec3{noise, noise, noise}
+}

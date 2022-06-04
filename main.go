@@ -154,12 +154,14 @@ func randomScene() Hittable {
 }
 
 func twoSpheresScene() Hittable {
+	noise := MakeNoiseTexture(4.0)
+	material1 := MakeLambertianTexture(noise)
 	checker := MakeCheckerTexture(&Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
-	material := MakeLambertianTexture(checker)
+	material2 := MakeLambertianTexture(checker)
 	world := &HittableList{
 		[]Hittable{
-			&Sphere{&Point3{0.0, -10, 0.0}, 10.0, material},
-			&Sphere{&Point3{0.0, 10, 0.0}, 10.0, material},
+			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
+			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material2},
 		},
 	}
 	return world
