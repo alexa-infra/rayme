@@ -10,6 +10,7 @@ import (
 	"math"
 	"os"
 	"time"
+	"log"
 )
 
 const (
@@ -51,6 +52,11 @@ func main() {
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
 		aperture = 0.0
+	} else if *sceneID == 2 {
+		world = earthSphereScene()
+		lookFrom = &Point3{13, 2, 3}
+		lookAt = &Point3{0, 0, 0}
+		vfov = 20.0
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
@@ -162,6 +168,20 @@ func twoSpheresScene() Hittable {
 		[]Hittable{
 			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
 			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material2},
+		},
+	}
+	return world
+}
+
+func earthSphereScene() Hittable {
+	tex, err := MakeImageTexture("./earthmap.jpg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	material := MakeLambertianTexture(tex)
+	world := &HittableList{
+		[]Hittable{
+			&Sphere{&Point3{0.0, 0.0, 0.0}, 2.0, material},
 		},
 	}
 	return world

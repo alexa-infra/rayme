@@ -3,6 +3,9 @@ package render
 import (
 	. "github.com/alexa-infra/rayme/math"
 	"math"
+	"image"
+	"os"
+	_ "image/jpeg"
 )
 
 type Texture interface {
@@ -50,4 +53,32 @@ func (this *NoiseTexture) GetValue(u, v float64, p *Point3) *Vec3 {
 	ps := &Point3{p.X * this.scale, p.Y * this.scale, p.Z * this.scale}
 	noise := this.perlin.Turb(ps, 7)
 	return &Vec3{noise, noise, noise}
+}
+
+type ImageTexture struct {
+	img image.Image
+}
+
+func MakeImageTexture(path string) (*ImageTexture, error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	img, _, err := image.Decode(reader)
+	if err != nil {
+		return nil, err
+	}
+	return &ImageTexture{ img }, nil
+}
+
+func (this *ImageTexture) GetValue(u, v float64, p *Point3) *Vec3 {
+	u = Clamp(u, 0.0, 1.0)
+	v = 1.0 - Clamp(v, 0.0, 1.0)
+	size := this.img.Bounds().Size()
+	x := int(u * float64(size.X))
+	y := int(v * float64(size.Y))
+	r, g, b, _ := this.img.At(x, y).RGBA()
+	scale := 1.0 / float64(0xffff)
+	return &Vec3{ float64(r) * scale, float64(g) * scale, float64(b) * scale }
 }

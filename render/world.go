@@ -33,10 +33,10 @@ type Sphere struct {
 	Material
 }
 
-func (this *Sphere) getUv(p *Point3) (u, v float64) {
-	theta := math.Acos(-p.Y)
-	phi := math.Atan2(-p.Z, p.X) + math.Pi
-	u = phi / (2 * math.Pi)
+func (this *Sphere) getUv(n *Vec3) (u, v float64) {
+	theta := math.Acos(-n.Y)
+	phi := math.Atan2(-n.Z, n.X) + math.Pi
+	u = phi / (2.0 * math.Pi)
 	v = theta / math.Pi
 	return
 }
@@ -68,7 +68,7 @@ func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	}
 	hitPoint := ray.At(root)
 	normal := GetDirection(this.Center, hitPoint).Mul(1.0 / this.Radius)
-	u, v := this.getUv(hitPoint)
+	u, v := this.getUv(normal)
 	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material, u, v)
 }
 
@@ -122,7 +122,7 @@ func (this *MovingSphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	}
 	hitPoint := ray.At(root)
 	normal := GetDirection(this.center(ray.Time), hitPoint).Mul(1.0 / this.Radius)
-	u, v := this.getUv(hitPoint)
+	u, v := this.getUv(normal)
 	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material, u, v)
 }
 
@@ -142,9 +142,9 @@ func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return true, SurroundingBox(aabb0, aabb1)
 }
 
-func (this *MovingSphere) getUv(p *Point3) (u, v float64) {
-	theta := math.Acos(-p.Y)
-	phi := math.Atan2(-p.Z, p.X) + math.Pi
+func (this *MovingSphere) getUv(n *Vec3) (u, v float64) {
+	theta := math.Acos(-n.Y)
+	phi := math.Atan2(-n.Z, n.X) + math.Pi
 	u = phi / (2 * math.Pi)
 	v = theta / math.Pi
 	return
