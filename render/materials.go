@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-var noColor *Vec3 = &Vec3{ 0, 0, 0 }
+var noColor *Vec3 = &Vec3{0, 0, 0}
 
 type Material interface {
 	Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray)
@@ -114,12 +114,12 @@ type DiffuseLight struct {
 }
 
 func MakeDiffuseLightFromTexture(emit Texture) *DiffuseLight {
-	return &DiffuseLight{ emit }
+	return &DiffuseLight{emit}
 }
 
 func MakeDiffuseLightFromColor(c *Vec3) *DiffuseLight {
 	tex := MakeSolidColor(c)
-	return &DiffuseLight{ tex }
+	return &DiffuseLight{tex}
 }
 
 func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {

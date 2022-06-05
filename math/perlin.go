@@ -38,7 +38,7 @@ func (this *Perlin) Noise(p *Point3) float64 {
 		for dj := 0; dj < 2; dj++ {
 			c[di][dj] = make([]*Vec3, 2)
 			for dk := 0; dk < 2; dk++ {
-				c[di][dj][dk] = this.randVec[this.permX[(i + di) & mask]^this.permY[(j + dj) & mask]^this.permZ[(k + dk) & mask]]
+				c[di][dj][dk] = this.randVec[this.permX[(i+di)&mask]^this.permY[(j+dj)&mask]^this.permZ[(k+dk)&mask]]
 			}
 		}
 	}
@@ -46,15 +46,15 @@ func (this *Perlin) Noise(p *Point3) float64 {
 }
 
 func trilinearInterp(c [][][]*Vec3, u, v, w float64) float64 {
-	u = u*u*(3-2*u)
-        v = v*v*(3-2*v)
-        w = w*w*(3-2*w)
+	u = u * u * (3 - 2*u)
+	v = v * v * (3 - 2*v)
+	w = w * w * (3 - 2*w)
 	acc := 0.0
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 2; j++ {
 			for k := 0; k < 2; k++ {
-				weight := &Vec3{u-float64(i), v-float64(j), w-float64(k)}
-				acc += (float64(i)*u + (1.0-float64(i))*(1-u))*(float64(j)*v + (1.0-float64(j))*(1-v))*(float64(k)*w + (1.0-float64(k))*(1-w))*Dot(c[i][j][k], weight)
+				weight := &Vec3{u - float64(i), v - float64(j), w - float64(k)}
+				acc += (float64(i)*u + (1.0-float64(i))*(1-u)) * (float64(j)*v + (1.0-float64(j))*(1-v)) * (float64(k)*w + (1.0-float64(k))*(1-w)) * Dot(c[i][j][k], weight)
 			}
 		}
 	}

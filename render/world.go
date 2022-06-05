@@ -97,17 +97,17 @@ func (this *MovingSphere) center(time float64) *Point3 {
 
 func (this *MovingSphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	c := this.center(ray.Time)
-	sphere := Sphere{ c, this.Radius, this.Material }
+	sphere := Sphere{c, this.Radius, this.Material}
 	return sphere.hit(ray, tMin, tMax)
 }
 
 func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	center0 := this.center(t0)
-	sphere0 := Sphere{ center0, this.Radius, this.Material }
+	sphere0 := Sphere{center0, this.Radius, this.Material}
 	_, aabb0 := sphere0.boundingBox(t0, t1)
 
 	center1 := this.center(t1)
-	sphere1 := Sphere{ center1, this.Radius, this.Material }
+	sphere1 := Sphere{center1, this.Radius, this.Material}
 	_, aabb1 := sphere1.boundingBox(t0, t1)
 	return true, SurroundingBox(aabb0, aabb1)
 }
@@ -167,7 +167,7 @@ func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int) *Vec3 {
 type RectXY struct {
 	x0, y0 float64
 	x1, y1 float64
-	k float64
+	k      float64
 	Material
 }
 
@@ -176,9 +176,9 @@ func MakeRectXY(x0, y0, x1, y1, k float64, m Material) *RectXY {
 }
 
 func (this *RectXY) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{ this.x0, this.y0, this.k - 0.0001 }
-	b := &Point3{ this.x1, this.y1, this.k + 0.0001 }
-	return true, &Aabb{ a, b }
+	a := &Point3{this.x0, this.y0, this.k - 0.0001}
+	b := &Point3{this.x1, this.y1, this.k + 0.0001}
+	return true, &Aabb{a, b}
 }
 
 func (this *RectXY) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -186,22 +186,22 @@ func (this *RectXY) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	if t < tMin || t > tMax {
 		return false, nil
 	}
-	x := ray.Origin.X + t * ray.Direction.X
-	y := ray.Origin.Y + t * ray.Direction.Y
+	x := ray.Origin.X + t*ray.Direction.X
+	y := ray.Origin.Y + t*ray.Direction.Y
 	if x < this.x0 || x > this.x1 || y < this.y0 || y > this.y1 {
 		return false, nil
 	}
 	hitPoint := ray.At(t)
 	u := (x - this.x0) / (this.x1 - this.x0)
 	v := (y - this.y0) / (this.y1 - this.y0)
-	normal := &Vec3{ 0, 0, 1 }
+	normal := &Vec3{0, 0, 1}
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }
 
 type RectXZ struct {
 	x0, z0 float64
 	x1, z1 float64
-	k float64
+	k      float64
 	Material
 }
 
@@ -210,9 +210,9 @@ func MakeRectXZ(x0, z0, x1, z1, k float64, m Material) *RectXZ {
 }
 
 func (this *RectXZ) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{ this.x0, this.z0, this.k - 0.0001 }
-	b := &Point3{ this.x1, this.z1, this.k + 0.0001 }
-	return true, &Aabb{ a, b }
+	a := &Point3{this.x0, this.z0, this.k - 0.0001}
+	b := &Point3{this.x1, this.z1, this.k + 0.0001}
+	return true, &Aabb{a, b}
 }
 
 func (this *RectXZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -220,22 +220,22 @@ func (this *RectXZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	if t < tMin || t > tMax {
 		return false, nil
 	}
-	x := ray.Origin.X + t * ray.Direction.X
-	z := ray.Origin.Z + t * ray.Direction.Z
+	x := ray.Origin.X + t*ray.Direction.X
+	z := ray.Origin.Z + t*ray.Direction.Z
 	if x < this.x0 || x > this.x1 || z < this.z0 || z > this.z1 {
 		return false, nil
 	}
 	hitPoint := ray.At(t)
 	u := (x - this.x0) / (this.x1 - this.x0)
 	v := (z - this.z0) / (this.z1 - this.z0)
-	normal := &Vec3{ 0, 1, 0 }
+	normal := &Vec3{0, 1, 0}
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }
 
 type RectYZ struct {
 	y0, z0 float64
 	y1, z1 float64
-	k float64
+	k      float64
 	Material
 }
 
@@ -244,9 +244,9 @@ func MakeRectYZ(y0, z0, y1, z1, k float64, m Material) *RectYZ {
 }
 
 func (this *RectYZ) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{ this.y0, this.z0, this.k - 0.0001 }
-	b := &Point3{ this.y1, this.z1, this.k + 0.0001 }
-	return true, &Aabb{ a, b }
+	a := &Point3{this.y0, this.z0, this.k - 0.0001}
+	b := &Point3{this.y1, this.z1, this.k + 0.0001}
+	return true, &Aabb{a, b}
 }
 
 func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -254,14 +254,14 @@ func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	if t < tMin || t > tMax {
 		return false, nil
 	}
-	y := ray.Origin.Y + t * ray.Direction.Y
-	z := ray.Origin.Z + t * ray.Direction.Z
+	y := ray.Origin.Y + t*ray.Direction.Y
+	z := ray.Origin.Z + t*ray.Direction.Z
 	if y < this.y0 || y > this.y1 || z < this.z0 || z > this.z1 {
 		return false, nil
 	}
 	hitPoint := ray.At(t)
 	u := (y - this.y0) / (this.y1 - this.y0)
 	v := (z - this.z0) / (this.z1 - this.z0)
-	normal := &Vec3{ 1, 0, 0 }
+	normal := &Vec3{1, 0, 0}
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }

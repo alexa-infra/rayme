@@ -7,29 +7,29 @@ import (
 	. "github.com/alexa-infra/rayme/render"
 	"image"
 	"image/png"
+	"log"
 	"math"
 	"os"
 	"time"
-	"log"
 )
 
 const (
-	focalLength     = 1.0
-	maxDepth        = 50
-	distToFocus     = 10
+	focalLength = 1.0
+	maxDepth    = 50
+	distToFocus = 10
 )
 
 var (
-	sceneID           = flag.Int("scene", 0, "Scene ID")
-	lookFrom *Point3  = nil
-	lookAt   *Point3  = nil
-	vfov              = 20.0
-	aperture          = 0.0
-	world    Hittable = nil
-	bgColor  *Vec3    = nil
-	aspectRatio     = 16.0 / 9.0
-	imageWidth      = 400
-	samplesPerPixel = 12
+	sceneID                  = flag.Int("scene", 0, "Scene ID")
+	lookFrom        *Point3  = nil
+	lookAt          *Point3  = nil
+	vfov                     = 20.0
+	aperture                 = 0.0
+	world           Hittable = nil
+	bgColor         *Vec3    = nil
+	aspectRatio              = 16.0 / 9.0
+	imageWidth               = 400
+	samplesPerPixel          = 12
 )
 
 func main() {
@@ -223,10 +223,10 @@ func simpleLight() Hittable {
 }
 
 func cornelBox() Hittable {
-	red := MakeLambertianSolidColor(&Vec3{ 0.65, 0.05, 0.05 })
-	white := MakeLambertianSolidColor(&Vec3{ 0.73, 0.73, 0.73 })
-	green := MakeLambertianSolidColor(&Vec3{ 0.12, 0.45, 0.15 })
-	light := MakeDiffuseLightFromColor(&Vec3{ 15, 15, 15 })
+	red := MakeLambertianSolidColor(&Vec3{0.65, 0.05, 0.05})
+	white := MakeLambertianSolidColor(&Vec3{0.73, 0.73, 0.73})
+	green := MakeLambertianSolidColor(&Vec3{0.12, 0.45, 0.15})
+	light := MakeDiffuseLightFromColor(&Vec3{15, 15, 15})
 
 	world := &HittableList{
 		[]Hittable{

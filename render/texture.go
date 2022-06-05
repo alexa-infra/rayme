@@ -2,10 +2,10 @@ package render
 
 import (
 	. "github.com/alexa-infra/rayme/math"
-	"math"
 	"image"
-	"os"
 	_ "image/jpeg"
+	"math"
+	"os"
 )
 
 type Texture interface {
@@ -42,7 +42,7 @@ func (this *CheckerTexture) GetValue(u, v float64, p *Point3) *Vec3 {
 
 type NoiseTexture struct {
 	perlin *Perlin
-	scale float64
+	scale  float64
 }
 
 func MakeNoiseTexture(scale float64) *NoiseTexture {
@@ -69,7 +69,7 @@ func MakeImageTexture(path string) (*ImageTexture, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ImageTexture{ img }, nil
+	return &ImageTexture{img}, nil
 }
 
 func (this *ImageTexture) GetValue(u, v float64, p *Point3) *Vec3 {
@@ -80,5 +80,5 @@ func (this *ImageTexture) GetValue(u, v float64, p *Point3) *Vec3 {
 	y := int(v * float64(size.Y))
 	r, g, b, _ := this.img.At(x, y).RGBA()
 	scale := 1.0 / float64(0xffff)
-	return &Vec3{ float64(r) * scale, float64(g) * scale, float64(b) * scale }
+	return &Vec3{float64(r) * scale, float64(g) * scale, float64(b) * scale}
 }
