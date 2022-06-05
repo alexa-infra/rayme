@@ -61,6 +61,13 @@ func main() {
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
 		bgColor = &Vec3{0.7, 0.8, 1.0}
+	} else if *sceneID == 3 {
+		world = simpleLight()
+		lookFrom = &Point3{26, 3, 6}
+		lookAt = &Point3{0, 0, 0}
+		vfov = 20.0
+		aperture = 0.0
+		bgColor = &Vec3{0.0, 0.0, 0.0}
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
@@ -186,6 +193,20 @@ func earthSphereScene() Hittable {
 	world := &HittableList{
 		[]Hittable{
 			&Sphere{&Point3{0.0, 0.0, 0.0}, 2.0, material},
+		},
+	}
+	return world
+}
+
+func simpleLight() Hittable {
+	noise := MakeNoiseTexture(4.0)
+	material1 := MakeLambertianTexture(noise)
+	difflight := MakeDiffuseLightFromColor(&Vec3{4, 4, 4})
+	world := &HittableList{
+		[]Hittable{
+			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
+			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material1},
+			MakeRectXY(3, 1, 5, 3, -2, difflight),
 		},
 	}
 	return world

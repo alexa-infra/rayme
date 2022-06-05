@@ -33,9 +33,9 @@ type Sphere struct {
 	Material
 }
 
-func (this *Sphere) getUv(n *Vec3) (u, v float64) {
-	theta := math.Acos(-n.Y)
-	phi := math.Atan2(-n.Z, n.X) + math.Pi
+func getSphereUv(p *Vec3) (u, v float64) {
+	theta := math.Acos(-p.Y)
+	phi := math.Atan2(-p.Z, p.X) + math.Pi
 	u = phi / (2.0 * math.Pi)
 	v = theta / math.Pi
 	return
@@ -68,7 +68,7 @@ func (this *Sphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	}
 	hitPoint := ray.At(root)
 	normal := GetDirection(this.Center, hitPoint).Mul(1.0 / this.Radius)
-	u, v := this.getUv(normal)
+	u, v := getSphereUv(normal)
 	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material, u, v)
 }
 
@@ -110,11 +110,6 @@ func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	sphere1 := Sphere{ center1, this.Radius, this.Material }
 	_, aabb1 := sphere1.boundingBox(t0, t1)
 	return true, SurroundingBox(aabb0, aabb1)
-}
-
-func (this *MovingSphere) getUv(n *Vec3) (u, v float64) {
-	sphere := Sphere{ this.Center0, this.Radius, this.Material }
-	return sphere.getUv(n)
 }
 
 type HittableList struct {
@@ -167,4 +162,38 @@ func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int) *Vec3 {
 		return emitted
 	}
 	return GetRayColor(target, bgColor, world, depth-1).MulVec(attenuation).Add(emitted)
+}
+
+type RectXY struct {
+	x0, y0 float64
+	x1, y1 float64
+	k float64
+	Material
+}
+
+func MakeRectXY(x0, y0, x1, y1, k float64, m Material) *RectXY {
+	return &RectXY{x0, y0, x1, y1, k, m}
+}
+
+func (this *RectXY) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	a := &Point3{ this.x0, this.y0, this.k - 0.0001 }
+	b := &Point3{ this.x1, this.y1, this.k + 0.0001 }
+	return true, &Aabb{ a, b }
+}
+
+func (this *RectXY) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	t := (this.k - ray.Origin.Z) / ray.Direction.Z
+	if t < tMin || t > tMax {
+		return false, nil
+	}
+	x := ray.Origin.X + t * ray.Direction.X
+	y := ray.Origin.Y + t * ray.Direction.Y
+	if x < this.x0 || x > this.x1 || y < this.y0 || y > this.y1 {
+		return false, nil
+	}
+	hitPoint := ray.At(t)
+	u := (x - this.x0) / (this.x1 - this.x0)
+	v := (y - this.y0) / (this.y1 - this.y0)
+	normal := &Vec3{ 0, 0, 1 }
+	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }

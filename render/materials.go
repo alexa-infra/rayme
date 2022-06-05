@@ -113,8 +113,13 @@ type DiffuseLight struct {
 	emit Texture
 }
 
-func MakeDiffuseLight(emit Texture) *DiffuseLight {
+func MakeDiffuseLightFromTexture(emit Texture) *DiffuseLight {
 	return &DiffuseLight{ emit }
+}
+
+func MakeDiffuseLightFromColor(c *Vec3) *DiffuseLight {
+	tex := MakeSolidColor(c)
+	return &DiffuseLight{ tex }
 }
 
 func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {

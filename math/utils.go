@@ -9,6 +9,13 @@ func Min(a, b float64) float64 {
 	return b
 }
 
+func Max(a, b float64) float64 {
+	if a < b {
+		return b
+	}
+	return a
+}
+
 func Clamp(value, a, b float64) float64 {
 	if value < a {
 		return a
