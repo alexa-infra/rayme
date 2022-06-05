@@ -96,58 +96,25 @@ func (this *MovingSphere) center(time float64) *Point3 {
 }
 
 func (this *MovingSphere) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
-	oc := GetDirection(this.center(ray.Time), ray.Origin)
-	a := Dot(ray.Direction, ray.Direction)
-	h := Dot(oc, ray.Direction)
-	c := Dot(oc, oc) - this.Radius*this.Radius
-	discriminant := h*h - a*c
-	if discriminant < 0 {
-		return false, nil
-	}
-	root1 := (-h - math.Sqrt(discriminant)) / a
-	root2 := (-h + math.Sqrt(discriminant)) / a
-	root := 0.0
-	if root1 < tMin || root1 > tMax {
-		if root2 >= tMin && root2 <= tMax {
-			root = root2
-		} else {
-			return false, nil
-		}
-	} else {
-		if root2 >= tMin && root2 <= tMax {
-			root = Min(root1, root2)
-		} else {
-			root = root1
-		}
-	}
-	hitPoint := ray.At(root)
-	normal := GetDirection(this.center(ray.Time), hitPoint).Mul(1.0 / this.Radius)
-	u, v := this.getUv(normal)
-	return true, MakeHitRecord(ray, root, hitPoint, normal, this.Material, u, v)
+	c := this.center(ray.Time)
+	sphere := Sphere{ c, this.Radius, this.Material }
+	return sphere.hit(ray, tMin, tMax)
 }
 
 func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	r := this.Radius * math.Sqrt2
-	radius := &Vec3{r, r, r}
 	center0 := this.center(t0)
-	aabb0 := &Aabb{
-		center0.Move(radius.Mul(-1)),
-		center0.Move(radius),
-	}
+	sphere0 := Sphere{ center0, this.Radius, this.Material }
+	_, aabb0 := sphere0.boundingBox(t0, t1)
+
 	center1 := this.center(t1)
-	aabb1 := &Aabb{
-		center1.Move(radius.Mul(-1)),
-		center1.Move(radius),
-	}
+	sphere1 := Sphere{ center1, this.Radius, this.Material }
+	_, aabb1 := sphere1.boundingBox(t0, t1)
 	return true, SurroundingBox(aabb0, aabb1)
 }
 
 func (this *MovingSphere) getUv(n *Vec3) (u, v float64) {
-	theta := math.Acos(-n.Y)
-	phi := math.Atan2(-n.Z, n.X) + math.Pi
-	u = phi / (2 * math.Pi)
-	v = theta / math.Pi
-	return
+	sphere := Sphere{ this.Center0, this.Radius, this.Material }
+	return sphere.getUv(n)
 }
 
 type HittableList struct {
