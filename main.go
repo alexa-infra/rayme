@@ -14,11 +14,7 @@ import (
 )
 
 const (
-	aspectRatio     = 16.0 / 9.0
-	imageWidth      = 400
-	imageHeight     = int(imageWidth / aspectRatio)
 	focalLength     = 1.0
-	samplesPerPixel = 12
 	maxDepth        = 50
 	distToFocus     = 10
 )
@@ -31,15 +27,13 @@ var (
 	aperture          = 0.0
 	world    Hittable = nil
 	bgColor  *Vec3    = nil
+	aspectRatio     = 16.0 / 9.0
+	imageWidth      = 400
+	samplesPerPixel = 12
 )
 
 func main() {
 	flag.Parse()
-	samples := []Vec2{Vec2{0.0, 0.0}}
-	for i := 0; i < samplesPerPixel; i++ {
-		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
-		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
-	}
 
 	if *sceneID == 0 {
 		world = randomScene()
@@ -68,9 +62,24 @@ func main() {
 		vfov = 20.0
 		aperture = 0.0
 		bgColor = &Vec3{0.0, 0.0, 0.0}
+	} else if *sceneID == 4 {
+		world = cornelBox()
+		lookFrom = &Point3{278, 278, -800}
+		lookAt = &Point3{278, 278, 0}
+		vfov = 40.0
+		aperture = 0.0
+		bgColor = &Vec3{0.0, 0.0, 0.0}
+		aspectRatio = 1.0
+		imageWidth = 600
+		samplesPerPixel = 64
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
+	}
+	samples := []Vec2{Vec2{0.0, 0.0}}
+	for i := 0; i < samplesPerPixel; i++ {
+		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
+		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
 	}
 	camera := MakeCamera(lookFrom, lookAt, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
 
@@ -82,6 +91,7 @@ func main() {
 		out <- rayColor
 	}
 
+	imageHeight := int(float64(imageWidth) / aspectRatio)
 	myImg := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
 	for j := 0; j < imageHeight; j++ {
 		for i := 0; i < imageWidth; i++ {
@@ -207,6 +217,25 @@ func simpleLight() Hittable {
 			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
 			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material1},
 			MakeRectXY(3, 1, 5, 3, -2, difflight),
+		},
+	}
+	return world
+}
+
+func cornelBox() Hittable {
+	red := MakeLambertianSolidColor(&Vec3{ 0.65, 0.05, 0.05 })
+	white := MakeLambertianSolidColor(&Vec3{ 0.73, 0.73, 0.73 })
+	green := MakeLambertianSolidColor(&Vec3{ 0.12, 0.45, 0.15 })
+	light := MakeDiffuseLightFromColor(&Vec3{ 15, 15, 15 })
+
+	world := &HittableList{
+		[]Hittable{
+			MakeRectYZ(0, 0, 555, 555, 555, green),
+			MakeRectYZ(0, 0, 555, 555, 0, red),
+			MakeRectXZ(0, 0, 555, 555, 555, white),
+			MakeRectXZ(0, 0, 555, 555, 0, white),
+			MakeRectXY(0, 0, 555, 555, 555, white),
+			MakeRectXZ(213, 227, 343, 332, 554, light),
 		},
 	}
 	return world
