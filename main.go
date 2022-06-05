@@ -30,6 +30,7 @@ var (
 	vfov              = 20.0
 	aperture          = 0.0
 	world    Hittable = nil
+	bgColor  *Vec3    = nil
 )
 
 func main() {
@@ -46,17 +47,20 @@ func main() {
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
 		aperture = 0.1
+		bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else if *sceneID == 1 {
 		world = twoSpheresScene()
 		lookFrom = &Point3{13, 2, 3}
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
 		aperture = 0.0
+		bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else if *sceneID == 2 {
 		world = earthSphereScene()
 		lookFrom = &Point3{13, 2, 3}
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
+		bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
@@ -67,7 +71,7 @@ func main() {
 
 	render := func(u, v float64, out chan *Vec3) {
 		ray := camera.CastRay(u, v)
-		rayColor := GetRayColor(ray, world, maxDepth)
+		rayColor := GetRayColor(ray, bgColor, world, maxDepth)
 		out <- rayColor
 	}
 

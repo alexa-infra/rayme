@@ -5,8 +5,11 @@ import (
 	"math"
 )
 
+var noColor *Vec3 = &Vec3{ 0, 0, 0 }
+
 type Material interface {
 	Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray)
+	Emitted(u, v float64, p *Point3) *Vec3
 }
 
 type Lambertian struct {
@@ -32,6 +35,10 @@ func (this *Lambertian) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	return true, attenuation, scattered
 }
 
+func (this *Lambertian) Emitted(u, v float64, p *Point3) *Vec3 {
+	return noColor
+}
+
 func reflect(v, n *Vec3) *Vec3 {
 	dot := Dot(v, n)
 	return v.Add(n.Mul(-2.0 * dot))
@@ -51,6 +58,10 @@ func (this *Metal) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	reflected := reflect(r.Direction, rec.n).Add(fuzz)
 	scattered := MakeRayFromDirection(rec.p, reflected, r.Time)
 	return Dot(scattered.Direction, rec.n) > 0, this.albedo, scattered
+}
+
+func (this *Metal) Emitted(u, v float64, p *Point3) *Vec3 {
+	return noColor
 }
 
 func refract(uv *Vec3, n *Vec3, angleFrac float64) *Vec3 {
@@ -92,4 +103,24 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	}
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
 	return true, attenuation, scattered
+}
+
+func (this *Dielectric) Emitted(u, v float64, p *Point3) *Vec3 {
+	return noColor
+}
+
+type DiffuseLight struct {
+	emit Texture
+}
+
+func MakeDiffuseLight(emit Texture) *DiffuseLight {
+	return &DiffuseLight{ emit }
+}
+
+func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+	return false, nil, nil
+}
+
+func (this *DiffuseLight) Emitted(u, v float64, p *Point3) *Vec3 {
+	return this.emit.GetValue(u, v, p)
 }

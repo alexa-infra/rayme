@@ -152,20 +152,19 @@ func (this *HittableList) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return found, surrounding
 }
 
-func GetRayColor(r *Ray, world Hittable, depth int) *Vec3 {
+func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int) *Vec3 {
 	if depth <= 0 {
-		return &Vec3{0.0, 0.0, 0.0}
+		return noColor
 	}
 	hit, rec := world.hit(r, 0.001, 1000)
-	if hit {
-		scattered, attenuation, target := rec.Material.Scatter(r, rec)
-		if !scattered {
-			return &Vec3{0.0, 0.0, 0.0}
-		}
-		return GetRayColor(target, world, depth-1).MulVec(attenuation)
+	if !hit {
+		return bgColor
 	}
-	t := 0.5 * (r.Direction.Y + 1.0)
-	color1 := Vec3{1.0, 1.0, 1.0}
-	color2 := Vec3{0.5, 0.7, 1.0}
-	return color1.Mul(1.0 - t).Add(color2.Mul(t))
+
+	emitted := rec.Material.Emitted(rec.u, rec.v, rec.p)
+	scattered, attenuation, target := rec.Material.Scatter(r, rec)
+	if !scattered {
+		return emitted
+	}
+	return GetRayColor(target, bgColor, world, depth-1).MulVec(attenuation).Add(emitted)
 }
