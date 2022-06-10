@@ -78,8 +78,9 @@ func main() {
 	}
 	samples := []Vec2{Vec2{0.0, 0.0}}
 	for i := 0; i < samplesPerPixel; i++ {
-		angle := 2.0 * math.Pi * float64(i) / float64(samplesPerPixel)
-		samples = append(samples, Vec2{0.25 * math.Cos(angle), 0.25 * math.Sin(angle)})
+		angle := RandomBetween(0, 2 * math.Pi)
+		r := RandomBetween(0, 1)
+		samples = append(samples, Vec2{r * math.Cos(angle), r * math.Sin(angle)})
 	}
 	camera := MakeCamera(lookFrom, lookAt, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
 
