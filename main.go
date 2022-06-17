@@ -93,7 +93,7 @@ func main() {
 	}
 
 	imageHeight := int(float64(imageWidth) / aspectRatio)
-	myImg := image.NewRGBA(image.Rect(0, 0, imageWidth, imageHeight))
+	myImg := image.NewRGBA64(image.Rect(0, 0, imageWidth, imageHeight))
 	for j := 0; j < imageHeight; j++ {
 		for i := 0; i < imageWidth; i++ {
 			channel := make(chan *Vec3)
@@ -114,7 +114,7 @@ func main() {
 				math.Sqrt(sumColor.Y * scale),
 				math.Sqrt(sumColor.Z * scale),
 			}
-			myImg.SetRGBA(i, imageHeight-j-1, sumColor.AsColor())
+			myImg.Set(i, imageHeight-j-1, sumColor.AsColor())
 		}
 	}
 	fmt.Println("Full time:", time.Since(startFull).Seconds(), "seconds")

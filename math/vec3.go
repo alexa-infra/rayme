@@ -13,8 +13,13 @@ type Vec3 struct {
 	X, Y, Z float64
 }
 
-func (v *Vec3) AsColor() color.RGBA {
-	return color.RGBA{uint8(255 * Clamp(v.X, 0.0, 1.0)), uint8(255 * Clamp(v.Y, 0.0, 1.0)), uint8(255 * Clamp(v.Z, 0.0, 1.0)), 255}
+func (v *Vec3) AsColor() color.Color {
+	return color.RGBA64{
+		uint16(0xffff * Clamp(v.X, 0.0, 1.0)),
+		uint16(0xffff * Clamp(v.Y, 0.0, 1.0)),
+		uint16(0xffff * Clamp(v.Z, 0.0, 1.0)),
+		uint16(0xffff),
+	}
 }
 
 func (v *Vec3) Mul(t float64) *Vec3 {
