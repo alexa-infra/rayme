@@ -76,11 +76,9 @@ func main() {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
 	}
-	samples := []Vec2{Vec2{0.0, 0.0}}
-	for i := 0; i < samplesPerPixel; i++ {
-		angle := RandomBetween(0, 2 * math.Pi)
-		r := RandomBetween(0, 1)
-		samples = append(samples, Vec2{r * math.Cos(angle), r * math.Sin(angle)})
+	samples := []*Vec3{&Vec3{0.0, 0.0, 0.0}}
+	for i := 0; i < samplesPerPixel - 1; i++ {
+		samples = append(samples, RandomInUnitDisk())
 	}
 	camera := MakeCamera(lookFrom, lookAt, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
 
