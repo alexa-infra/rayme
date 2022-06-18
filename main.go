@@ -92,6 +92,7 @@ func main() {
 
 	imageHeight := int(float64(imageWidth) / aspectRatio)
 	myImg := image.NewRGBA64(image.Rect(0, 0, imageWidth, imageHeight))
+	total := float32(imageHeight * imageWidth)
 	for j := 0; j < imageHeight; j++ {
 		for i := 0; i < imageWidth; i++ {
 			channel := make(chan *Vec3)
@@ -113,9 +114,12 @@ func main() {
 				math.Sqrt(sumColor.Z * scale),
 			}
 			myImg.Set(i, imageHeight-j-1, sumColor.AsColor())
+			counter := float32(j * imageWidth + i + 1)
+			progress := counter / total * 100.0
+			fmt.Printf("\rProgress: %9.2f%%", progress)
 		}
 	}
-	fmt.Println("Full time:", time.Since(startFull).Seconds(), "seconds")
+	fmt.Printf("\nFull time: %9.2f seconds\n", time.Since(startFull).Seconds())
 	out, err := os.Create("output.png")
 	if err != nil {
 		fmt.Println("can't open file to write")
