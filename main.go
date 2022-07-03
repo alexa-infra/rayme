@@ -46,13 +46,17 @@ func main() {
 		vfov = 20.0
 		aperture = 0.1
 		bgColor = &Vec3{0.7, 0.8, 1.0}
+		imageWidth = 1200
+		samplesPerPixel = 32
 	} else if *sceneID == 1 {
 		world = twoSpheresScene()
-		lookFrom = &Point3{13, 2, 3}
-		lookAt = &Point3{0, 0, 0}
-		vfov = 20.0
+		lookFrom = &Point3{13, 7, 3}
+		lookAt = &Point3{0, 1, 0}
+		vfov = 30.0
 		aperture = 0.0
-		bgColor = &Vec3{0.7, 0.8, 1.0}
+		samplesPerPixel = 16
+		imageWidth = 640
+		bgColor = &Vec3{0.3, 0.3, 0.3}
 	} else if *sceneID == 2 {
 		world = earthSphereScene()
 		lookFrom = &Point3{13, 2, 3}
@@ -74,8 +78,8 @@ func main() {
 		aperture = 0.0
 		bgColor = &Vec3{0.0, 0.0, 0.0}
 		aspectRatio = 1.0
-		imageWidth = 600
-		samplesPerPixel = 64
+		imageWidth = 500
+		samplesPerPixel = 32
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
@@ -200,14 +204,17 @@ func randomScene() Hittable {
 }
 
 func twoSpheresScene() Hittable {
-	noise := MakeNoiseTexture(4.0)
-	material1 := MakeLambertianTexture(noise)
+	red := MakeMetal(&Vec3{0.9, 0.1, 0.1}, 0.1)
+	blue := MakeMetal(&Vec3{0.1, 0.1, 0.9}, 0.1)
 	checker := MakeCheckerTexture3d(1.0, &Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
 	material2 := MakeLambertianTexture(checker)
+	light := MakeDiffuseLightFromColor(&Vec3{15, 15, 15})
 	world := &HittableList{
 		[]Hittable{
-			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
-			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material2},
+			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material2},
+			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, red},
+			&Sphere{&Point3{3.0, 1, -1.0}, 1.0, blue},
+			&Sphere{&Point3{3.0, 25, 1.0}, 3.0, light},
 		},
 	}
 	return world
