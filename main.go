@@ -130,7 +130,7 @@ func main() {
 }
 
 func randomScene() Hittable {
-	ground := MakeLambertianTexture(MakeCheckerTexture(&Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9}))
+	ground := MakeLambertianTexture(MakeCheckerTexture3d(1.0, &Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9}))
 	glass := MakeDielectric(1.5)
 
 	world := &HittableList{
@@ -186,7 +186,7 @@ func randomScene() Hittable {
 func twoSpheresScene() Hittable {
 	noise := MakeNoiseTexture(4.0)
 	material1 := MakeLambertianTexture(noise)
-	checker := MakeCheckerTexture(&Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
+	checker := MakeCheckerTexture3d(1.0, &Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
 	material2 := MakeLambertianTexture(checker)
 	world := &HittableList{
 		[]Hittable{
