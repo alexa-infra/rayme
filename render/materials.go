@@ -8,7 +8,7 @@ import (
 var noColor *Vec3 = &Vec3{0, 0, 0}
 
 type Material interface {
-	Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray)
+	Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray)
 	Emitted(u, v float64, p *Point3) *Vec3
 }
 
@@ -25,8 +25,8 @@ func MakeLambertianTexture(t Texture) *Lambertian {
 	return &Lambertian{t}
 }
 
-func (this *Lambertian) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
-	dir := rec.n.Add(RandomUnitVector())
+func (this *Lambertian) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
+	dir := rec.n.Add(rng.RandomUnitVector())
 	if dir.NearZero() {
 		dir = rec.n
 	}
@@ -53,8 +53,8 @@ func MakeMetal(albedo *Vec3, fuzz float64) *Metal {
 	return &Metal{albedo, fuzz}
 }
 
-func (this *Metal) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
-	fuzz := RandomInUnitSphere().Mul(this.fuzz)
+func (this *Metal) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
+	fuzz := rng.RandomInUnitSphere().Mul(this.fuzz)
 	reflected := reflect(r.Direction, rec.n).Add(fuzz)
 	scattered := MakeRayFromDirection(rec.p, reflected, r.Time)
 	return Dot(scattered.Direction, rec.n) > 0, this.albedo, scattered
@@ -85,7 +85,7 @@ func MakeDielectric(ri float64) *Dielectric {
 	return &Dielectric{ri}
 }
 
-func (this *Dielectric) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+func (this *Dielectric) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
 	attenuation := &Vec3{1.0, 1.0, 1.0}
 	ratio := this.ri
 	if rec.frontFace {
@@ -96,7 +96,7 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
 	sinTheta := math.Sqrt(1.0 - cosTheta*cosTheta)
 	cannotRefract := ratio*sinTheta > 1.0
 	var dir *Vec3 = nil
-	if cannotRefract || reflectance(cosTheta, ratio) > RandomBetween(0.0, 1.0) {
+	if cannotRefract || reflectance(cosTheta, ratio) > rng.Between(0.0, 1.0) {
 		dir = reflect(unitDirection, rec.n)
 	} else {
 		dir = refract(unitDirection, rec.n, ratio)
@@ -122,7 +122,7 @@ func MakeDiffuseLightFromColor(c *Vec3) *DiffuseLight {
 	return &DiffuseLight{tex}
 }
 
-func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord) (bool, *Vec3, *Ray) {
+func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
 	return false, nil, nil
 }
 

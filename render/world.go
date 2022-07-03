@@ -147,7 +147,7 @@ func (this *HittableList) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return found, surrounding
 }
 
-func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int) *Vec3 {
+func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int, rng *RandExt) *Vec3 {
 	if depth <= 0 {
 		return noColor
 	}
@@ -157,11 +157,11 @@ func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int) *Vec3 {
 	}
 
 	emitted := rec.Material.Emitted(rec.u, rec.v, rec.p)
-	scattered, attenuation, target := rec.Material.Scatter(r, rec)
+	scattered, attenuation, target := rec.Material.Scatter(r, rec, rng)
 	if !scattered {
 		return emitted
 	}
-	return GetRayColor(target, bgColor, world, depth-1).MulVec(attenuation).Add(emitted)
+	return GetRayColor(target, bgColor, world, depth-1, rng).MulVec(attenuation).Add(emitted)
 }
 
 type RectXY struct {

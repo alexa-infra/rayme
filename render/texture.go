@@ -66,8 +66,8 @@ type NoiseTexture struct {
 	scale  float64
 }
 
-func MakeNoiseTexture(scale float64) *NoiseTexture {
-	return &NoiseTexture{MakePerlin(), scale}
+func MakeNoiseTexture(scale float64, r *RandExt) *NoiseTexture {
+	return &NoiseTexture{MakePerlin(r), scale}
 }
 
 func (this *NoiseTexture) GetValue(u, v float64, p *Point3) *Vec3 {

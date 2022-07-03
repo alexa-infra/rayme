@@ -29,7 +29,7 @@ func (this *Bvh) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return true, this.box
 }
 
-func MakeBvh(objects []Hittable, t0, t1 float64) *Bvh {
+func MakeBvh(objects []Hittable, t0, t1 float64, rng *RandExt) *Bvh {
 	if len(objects) == 0 {
 		return nil
 	}
@@ -38,7 +38,7 @@ func MakeBvh(objects []Hittable, t0, t1 float64) *Bvh {
 		_, box := first.boundingBox(t0, t1)
 		return &Bvh{first, first, box}
 	}
-	axis := RandomInt(3)
+	axis := rng.Intn(3)
 	if axis == 0 {
 		sort.Slice(objects, func(i, j int) bool {
 			_, box1 := objects[i].boundingBox(t0, t1)
@@ -59,14 +59,14 @@ func MakeBvh(objects []Hittable, t0, t1 float64) *Bvh {
 		})
 	}
 	mid := len(objects) / 2
-	left := MakeBvh(objects[:mid], t0, t1)
-	right := MakeBvh(objects[mid:], t0, t1)
+	left := MakeBvh(objects[:mid], t0, t1, rng)
+	right := MakeBvh(objects[mid:], t0, t1, rng)
 	_, box1 := left.boundingBox(t0, t1)
 	_, box2 := right.boundingBox(t0, t1)
 	box := SurroundingBox(box1, box2)
 	return &Bvh{left, right, box}
 }
 
-func MakeBvhFromList(list *HittableList, t0, t1 float64) *Bvh {
-	return MakeBvh(list.Objects, t0, t1)
+func MakeBvhFromList(list *HittableList, t0, t1 float64, r *RandExt) *Bvh {
+	return MakeBvh(list.Objects, t0, t1, r)
 }

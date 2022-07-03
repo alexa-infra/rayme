@@ -31,10 +31,13 @@ func MakeCamera(lookFrom, lookAt *Point3, vup *Vec3, vfov float64, aspectRatio f
 	return &Camera{origin, horizontal, vertical, lowerLeftCorner, u, v, w, lensRadius, t1, t2}
 }
 
-func (c *Camera) CastRay(s, t float64) *Ray {
-	rd := RandomInUnitDisk().Mul(c.lensRadius)
-	offset := c.u.Mul(rd.X).Add(c.v.Mul(rd.Y))
-	randomAtOrigin := c.origin.Move(offset)
+func (c *Camera) CastRay(s, t float64, rng *RandExt) *Ray {
+	var origin *Point3 = c.origin
+	if c.lensRadius != 0.0 {
+		rd := rng.RandomInUnitDisk().Mul(c.lensRadius)
+		offset := c.u.Mul(rd.X).Add(c.v.Mul(rd.Y))
+		origin = origin.Move(offset)
+	}
 	target := c.lowerLeftCorner.Move(c.horizontal.Mul(s)).Move(c.vertical.Mul(t))
-	return MakeRayFromPoints(randomAtOrigin, target, RandomBetween(c.t1, c.t2))
+	return MakeRayFromPoints(origin, target, rng.Between(c.t1, c.t2))
 }

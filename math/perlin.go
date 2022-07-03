@@ -12,16 +12,14 @@ type Perlin struct {
 	permX, permY, permZ []int
 }
 
-func MakePerlin() *Perlin {
+func MakePerlin(rng *RandExt) *Perlin {
 	f := make([]*Vec3, pointCount)
 	for i := 0; i < pointCount; i++ {
-		f[i] = RandomInUnitSphere()
+		f[i] = rng.RandomInUnitSphere()
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
-	x := randGen.Perm(pointCount)
-	y := randGen.Perm(pointCount)
-	z := randGen.Perm(pointCount)
+	x := rng.Perm(pointCount)
+	y := rng.Perm(pointCount)
+	z := rng.Perm(pointCount)
 	return &Perlin{f, x, y, z}
 }
 

@@ -3,30 +3,25 @@ package math
 import (
 	"math"
 	"math/rand"
-	"sync"
 )
 
-var (
-	randGen = rand.New(rand.NewSource(99))
-	mutex   = new(sync.Mutex)
-)
-
-func RandomBetween(a, b float64) float64 {
-	mutex.Lock()
-	defer mutex.Unlock()
-	return randGen.Float64()*(b-a) + a
+type RandExt struct {
+	*rand.Rand
 }
 
-func RandomInt(n int) int {
-	mutex.Lock()
-	defer mutex.Unlock()
-	return randGen.Intn(n)
+func MakeRandExt(seed int) *RandExt {
+	randGen := rand.New(rand.NewSource(99))
+	return &RandExt{ randGen }
 }
 
-func RandomInUnitSphere() *Vec3 {
-	theta := RandomBetween(0, 2 * math.Pi)
-	phi := RandomBetween(0, math.Pi)
-	r := RandomBetween(0, 1)
+func (this *RandExt) Between(a, b float64) float64 {
+	return this.Rand.Float64()*(b-a) + a
+}
+
+func (this *RandExt) RandomInUnitSphere() *Vec3 {
+	theta := this.Between(0, 2 * math.Pi)
+	phi := this.Between(0, math.Pi)
+	r := this.Between(0, 1)
 	sinTheta := math.Sin(theta)
 	cosTheta := math.Cos(theta)
 	sinPhi := math.Sin(phi)
@@ -37,17 +32,17 @@ func RandomInUnitSphere() *Vec3 {
 	return &Vec3{ x, y, z }
 }
 
-func RandomInUnitDisk() *Vec3 {
-	angle := RandomBetween(0, 2 * math.Pi)
-	r := RandomBetween(0, 1)
+func (this *RandExt) RandomInUnitDisk() *Vec3 {
+	angle := this.Between(0, 2 * math.Pi)
+	r := this.Between(0, 1)
 	x := r * math.Cos(angle)
 	y := r * math.Sin(angle)
 	return &Vec3{x, y, 0.0}
 }
 
-func RandomUnitVector() *Vec3 {
-	theta := RandomBetween(0, 2 * math.Pi)
-	phi := RandomBetween(0, math.Pi)
+func (this *RandExt) RandomUnitVector() *Vec3 {
+	theta := this.Between(0, 2 * math.Pi)
+	phi := this.Between(0, math.Pi)
 	sinTheta := math.Sin(theta)
 	cosTheta := math.Cos(theta)
 	sinPhi := math.Sin(phi)
