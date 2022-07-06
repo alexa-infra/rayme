@@ -265,3 +265,129 @@ func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	normal := &Vec3{1, 0, 0}
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }
+
+type Box struct {
+	min, max *Point3
+	sides HittableList
+}
+
+func (this *Box) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	return this.sides.hit(r, tMin, tMax)
+}
+
+func (this *Box) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	return true, &Aabb{this.min, this.max}
+}
+
+func MakeBox(p0, p1 *Point3, m Material) *Box {
+	sides := HittableList{
+		[]Hittable{
+			MakeRectXY(p0.X, p0.Y, p1.X, p1.Y, p1.Z, m),
+			MakeRectXY(p0.X, p0.Y, p1.X, p1.Y, p0.Z, m),
+			MakeRectXZ(p0.X, p0.Z, p1.X, p1.Z, p1.Y, m),
+			MakeRectXZ(p0.X, p0.Z, p1.X, p1.Z, p0.Y, m),
+			MakeRectYZ(p0.Y, p0.Z, p1.Y, p1.Z, p1.X, m),
+			MakeRectYZ(p0.Y, p0.Z, p1.Y, p1.Z, p0.X, m),
+		},
+	}
+	return &Box{p0, p1, sides}
+}
+
+type Translate struct {
+	obj    Hittable
+	offset *Vec3
+}
+
+func (this *Translate) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	ray := MakeRayFromDirection(r.Origin.Move(this.offset.Mul(-1)), r.Direction, r.Time)
+	hit, rec := this.obj.hit(ray, tMin, tMax)
+	if !hit {
+		return false, nil
+	}
+	return true, MakeHitRecord(ray, rec.t, rec.p.Move(this.offset), rec.n, rec.Material, rec.u, rec.v)
+}
+
+func (this *Translate) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	ok, box := this.obj.boundingBox(t0, t1)
+	if !ok {
+		return false, nil
+	}
+	return true, &Aabb{box.Min.Move(this.offset), box.Max.Move(this.offset)}
+}
+
+func MakeTranslate(obj Hittable, displacement *Vec3) *Translate {
+	return &Translate{obj, displacement}
+}
+
+type RotateY struct {
+	obj    Hittable
+	sinTheta, cosTheta float64
+	hasBox bool
+	bbox   *Aabb
+}
+
+func MakeRotateY(obj Hittable, angle float64) *RotateY {
+	radians := DegreesToRadians(angle)
+	sinTheta := math.Sin(radians)
+	cosTheta := math.Cos(radians)
+	hasBox, box := obj.boundingBox(0, 1)
+	inf := math.Inf(1)
+	ninf := math.Inf(-1)
+	min := Point3{inf, inf, inf}
+	max := Point3{ninf, ninf, ninf}
+	for i := 0; i < 2; i++ {
+		for j := 0; j < 2; j++ {
+			for k := 0; k < 2; k++ {
+				x := float64(i) * box.Max.X + (1 - float64(i)) * box.Min.X
+				y := float64(j) * box.Max.Y + (1 - float64(j)) * box.Min.Y
+				z := float64(k) * box.Max.Z + (1 - float64(k)) * box.Min.Z
+				nx := cosTheta*x + sinTheta*z
+				nz := -sinTheta*x + cosTheta*z
+				p := Point3{nx, y, nz}
+				min.X = Min(min.X, p.X)
+				max.X = Max(max.X, p.X)
+				min.Y = Min(min.Y, p.Y)
+				max.Y = Max(max.Y, p.Y)
+				min.Z = Min(min.Z, p.Z)
+				max.Z = Max(max.Z, p.Z)
+			}
+		}
+	}
+	bbox := Aabb{&min, &max}
+	return &RotateY{obj, sinTheta, cosTheta, hasBox, &bbox}
+}
+
+func (this *RotateY) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	return this.hasBox, this.bbox
+}
+
+func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	origin := Point3{0, 0, 0}
+	direction := Vec3{0, 0, 0}
+
+	origin.X = this.cosTheta*r.Origin.X - this.sinTheta*r.Origin.Z
+	origin.Y = r.Origin.Y
+	origin.Z = this.sinTheta*r.Origin.X + this.cosTheta*r.Origin.Z
+
+	direction.X = this.cosTheta*r.Direction.X - this.sinTheta*r.Direction.Z
+	direction.Y = r.Direction.Y
+	direction.Z = this.sinTheta*r.Direction.X + this.cosTheta*r.Direction.Z
+
+	rotated := MakeRayFromDirection(&origin, &direction, r.Time)
+	hit, rec := this.obj.hit(rotated, tMin, tMax)
+	if !hit {
+		return false, nil
+	}
+	p := Point3{0, 0, 0}
+	normal := Vec3{0, 0, 0}
+
+	p.X = this.cosTheta*rec.p.X + this.sinTheta*rec.p.Z
+	p.Y = rec.p.Y
+	p.Z = -this.sinTheta*rec.p.X + this.cosTheta*rec.p.Z
+
+	normal.X = this.cosTheta*rec.n.X + this.sinTheta*rec.n.Z
+	normal.Y = rec.n.Y
+	normal.Z = -this.sinTheta*rec.n.X + this.cosTheta*rec.n.Z
+
+	return true, MakeHitRecord(rotated, rec.t, &p, &normal, rec.Material, rec.u, rec.v)
+}

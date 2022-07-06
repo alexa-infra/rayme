@@ -71,7 +71,7 @@ func main() {
 		aperture = 0.0
 		bgColor = &Vec3{0.0, 0.0, 0.0}
 	} else if *sceneID == 4 {
-		world = cornelBox()
+		world = cornellBox()
 		lookFrom = &Point3{278, 278, -800}
 		lookAt = &Point3{278, 278, 0}
 		vfov = 40.0
@@ -248,7 +248,7 @@ func simpleLight() Hittable {
 	return world
 }
 
-func cornelBox() Hittable {
+func cornellBox() Hittable {
 	red := MakeLambertianSolidColor(&Vec3{0.65, 0.05, 0.05})
 	white := MakeLambertianSolidColor(&Vec3{0.73, 0.73, 0.73})
 	green := MakeLambertianSolidColor(&Vec3{0.12, 0.45, 0.15})
@@ -262,6 +262,20 @@ func cornelBox() Hittable {
 			MakeRectXZ(0, 0, 555, 555, 0, white),
 			MakeRectXY(0, 0, 555, 555, 555, white),
 			MakeRectXZ(213, 227, 343, 332, 554, light),
+			MakeTranslate(
+				MakeRotateY(
+					MakeBox(&Point3{0, 0, 0}, &Point3{165, 330, 165}, white),
+					15,
+				),
+				&Vec3{265,0,295},
+			),
+			MakeTranslate(
+				MakeRotateY(
+					MakeBox(&Point3{0, 0, 0}, &Point3{165,165,165}, white),
+					-18,
+				),
+				&Vec3{130,0,65},
+			),
 		},
 	}
 	return world
