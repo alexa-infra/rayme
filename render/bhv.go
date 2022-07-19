@@ -8,6 +8,7 @@ import (
 type Bvh struct {
 	left, right Hittable
 	box         *Aabb
+	hittableNoPdf
 }
 
 func (this *Bvh) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -36,7 +37,7 @@ func MakeBvh(objects []Hittable, t0, t1 float64, rng *RandExt) *Bvh {
 	if len(objects) == 1 {
 		first := objects[0]
 		_, box := first.boundingBox(t0, t1)
-		return &Bvh{first, first, box}
+		return &Bvh{first, first, box, hittableNoPdf{}}
 	}
 	axis := rng.Intn(3)
 	if axis == 0 {
@@ -64,7 +65,7 @@ func MakeBvh(objects []Hittable, t0, t1 float64, rng *RandExt) *Bvh {
 	_, box1 := left.boundingBox(t0, t1)
 	_, box2 := right.boundingBox(t0, t1)
 	box := SurroundingBox(box1, box2)
-	return &Bvh{left, right, box}
+	return &Bvh{left, right, box, hittableNoPdf{}}
 }
 
 func MakeBvhFromList(list *HittableList, t0, t1 float64, r *RandExt) *Bvh {

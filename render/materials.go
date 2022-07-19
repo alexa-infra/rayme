@@ -7,9 +7,23 @@ import (
 
 var noColor *Vec3 = &Vec3{0, 0, 0}
 
+type ScatterRecord struct {
+	specular *Ray
+	isSpecular bool
+	attenuation *Vec3
+	pdf float64
+}
+
 type Material interface {
-	Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray)
+	Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord)
 	Emitted(u, v float64, p *Point3) *Vec3
+	ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64
+}
+
+type materialNoPdf struct {}
+
+func (this *materialNoPdf) ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64 {
+	return 0.0
 }
 
 type Lambertian struct {
@@ -25,14 +39,21 @@ func MakeLambertianTexture(t Texture) *Lambertian {
 	return &Lambertian{t}
 }
 
-func (this *Lambertian) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
-	dir := rec.n.Add(rng.RandomUnitVector())
-	if dir.NearZero() {
-		dir = rec.n
-	}
+func (this *Lambertian) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord) {
+	onb := BuildOnbFromW(rec.n)
+	dir := onb.Local(rng.RandomCosineDirection())
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
 	attenuation := this.albedo.GetValue(rec.u, rec.v, rec.p)
-	return true, attenuation, scattered
+	pdf := Dot(onb.W, scattered.Direction) / math.Pi
+	return true, &ScatterRecord{ scattered, false, attenuation, pdf }
+}
+
+func (this *Lambertian) ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64 {
+	cosine := Dot(rec.n, scattered.Direction)
+	if cosine < 0 {
+		return 0
+	}
+	return cosine / math.Pi
 }
 
 func (this *Lambertian) Emitted(u, v float64, p *Point3) *Vec3 {
@@ -47,17 +68,18 @@ func reflect(v, n *Vec3) *Vec3 {
 type Metal struct {
 	albedo *Vec3
 	fuzz   float64
+	materialNoPdf
 }
 
 func MakeMetal(albedo *Vec3, fuzz float64) *Metal {
-	return &Metal{albedo, fuzz}
+	return &Metal{albedo, fuzz, materialNoPdf{}}
 }
 
-func (this *Metal) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
+func (this *Metal) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord) {
 	fuzz := rng.RandomInUnitSphere().Mul(this.fuzz)
 	reflected := reflect(r.Direction, rec.n).Add(fuzz)
 	scattered := MakeRayFromDirection(rec.p, reflected, r.Time)
-	return Dot(scattered.Direction, rec.n) > 0, this.albedo, scattered
+	return Dot(scattered.Direction, rec.n) > 0, &ScatterRecord{ scattered, true, this.albedo, 0.0 }
 }
 
 func (this *Metal) Emitted(u, v float64, p *Point3) *Vec3 {
@@ -79,13 +101,14 @@ func reflectance(cosine float64, refIdx float64) float64 {
 
 type Dielectric struct {
 	ri float64 // Index of refraction
+	materialNoPdf
 }
 
 func MakeDielectric(ri float64) *Dielectric {
-	return &Dielectric{ri}
+	return &Dielectric{ri, materialNoPdf{}}
 }
 
-func (this *Dielectric) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
+func (this *Dielectric) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord) {
 	attenuation := &Vec3{1.0, 1.0, 1.0}
 	ratio := this.ri
 	if rec.frontFace {
@@ -102,7 +125,7 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Ve
 		dir = refract(unitDirection, rec.n, ratio)
 	}
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
-	return true, attenuation, scattered
+	return true, &ScatterRecord{ scattered, true, attenuation, 0.0 }
 }
 
 func (this *Dielectric) Emitted(u, v float64, p *Point3) *Vec3 {
@@ -111,19 +134,20 @@ func (this *Dielectric) Emitted(u, v float64, p *Point3) *Vec3 {
 
 type DiffuseLight struct {
 	emit Texture
+	materialNoPdf
 }
 
 func MakeDiffuseLightFromTexture(emit Texture) *DiffuseLight {
-	return &DiffuseLight{emit}
+	return &DiffuseLight{emit, materialNoPdf{}}
 }
 
 func MakeDiffuseLightFromColor(c *Vec3) *DiffuseLight {
 	tex := MakeSolidColor(c)
-	return &DiffuseLight{tex}
+	return &DiffuseLight{tex, materialNoPdf{}}
 }
 
-func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Vec3, *Ray) {
-	return false, nil, nil
+func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord) {
+	return false, &ScatterRecord{ nil, false, nil, 0.0 }
 }
 
 func (this *DiffuseLight) Emitted(u, v float64, p *Point3) *Vec3 {

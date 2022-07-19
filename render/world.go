@@ -25,6 +25,18 @@ func MakeHitRecord(ray *Ray, root float64, point *Point3, normal *Vec3, material
 type Hittable interface {
 	hit(r *Ray, tMin, tMax float64) (bool, *HitRecord)
 	boundingBox(t0, t1 float64) (bool, *Aabb)
+	pdfValue(origin *Point3, v *Vec3) float64
+	random(origin *Point3, rng *RandExt) *Vec3
+}
+
+type hittableNoPdf struct {}
+
+func (this *hittableNoPdf) pdfValue(origin *Point3, v *Vec3) float64 {
+	return 0.0
+}
+
+func (this *hittableNoPdf) random(origin *Point3, rng *RandExt) *Vec3 {
+	return &Vec3{ 1, 0, 0 }
 }
 
 type Sphere struct {
@@ -82,6 +94,24 @@ func (this *Sphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return true, aabb
 }
 
+func (this *Sphere) pdfValue(origin *Point3, v *Vec3) float64 {
+	hit, _ := this.hit(MakeRayFromDirection(origin, v, 0), 0.001, 10000)
+	if !hit {
+		return 0.0
+	}
+	distance2 := GetDirection(origin, this.Center).Length2()
+	cosThetaMax := math.Sqrt(1 - this.Radius * this.Radius / distance2)
+	solidAngle := 2 * math.Pi * (1 - cosThetaMax)
+	return 1 / solidAngle
+}
+
+func (this *Sphere) random(origin *Point3, rng *RandExt) *Vec3 {
+	dir := GetDirection(origin, this.Center)
+	distance2 := dir.Length2()
+	uvw := BuildOnbFromW(dir)
+	return uvw.Local(rng.RandomToSphere(this.Radius, distance2))
+}
+
 type MovingSphere struct {
 	Center0, Center1 *Point3
 	Radius           float64
@@ -110,6 +140,14 @@ func (this *MovingSphere) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	sphere1 := Sphere{center1, this.Radius, this.Material}
 	_, aabb1 := sphere1.boundingBox(t0, t1)
 	return true, SurroundingBox(aabb0, aabb1)
+}
+
+func (this *MovingSphere) pdfValue(origin *Point3, v *Vec3) float64 {
+	return 0.0
+}
+
+func (this *MovingSphere) random(origin *Point3, rng *RandExt) *Vec3 {
+	return &Vec3{ 1, 0, 0 }
 }
 
 type HittableList struct {
@@ -147,7 +185,21 @@ func (this *HittableList) boundingBox(t0, t1 float64) (bool, *Aabb) {
 	return found, surrounding
 }
 
-func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int, rng *RandExt) *Vec3 {
+func (this *HittableList) pdfValue(origin *Point3, v *Vec3) float64 {
+	weight := float64(1) / float64(len(this.Objects))
+	sum := float64(0)
+	for _, obj := range this.Objects {
+		sum += weight * obj.pdfValue(origin, v)
+	}
+	return sum
+}
+
+func (this *HittableList) random(origin *Point3, rng *RandExt) *Vec3 {
+	idx := rng.Intn(len(this.Objects))
+	return this.Objects[idx].random(origin, rng)
+}
+
+func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, lights Hittable, depth int, rng *RandExt) *Vec3 {
 	if depth <= 0 {
 		return noColor
 	}
@@ -156,12 +208,26 @@ func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, depth int, rng *RandExt)
 		return bgColor
 	}
 
-	emitted := rec.Material.Emitted(rec.u, rec.v, rec.p)
-	scattered, attenuation, target := rec.Material.Scatter(r, rec, rng)
+	var emitted *Vec3
+	if rec.frontFace {
+		emitted = rec.Material.Emitted(rec.u, rec.v, rec.p)
+	} else {
+		emitted = &Vec3{0, 0, 0}
+	}
+	scattered, srec := rec.Material.Scatter(r, rec, rng)
 	if !scattered {
 		return emitted
 	}
-	return GetRayColor(target, bgColor, world, depth-1, rng).MulVec(attenuation).Add(emitted)
+	if !srec.isSpecular && lights != nil {
+		lightPdf := MakeHittablePdf(lights, rec.p)
+		cosinePdf := MakeCosinePdf(rec.n)
+		mixPdf := MakeMixturePdf(lightPdf, cosinePdf)
+
+		srec.specular = MakeRayFromDirection(rec.p, mixPdf.generate(rng), r.Time)
+		pdfVal := mixPdf.value(srec.specular.Direction)
+		srec.attenuation = srec.attenuation.Mul(rec.Material.ScatteringPDF(r, rec, srec.specular)).Mul(1 / pdfVal)
+	}
+	return GetRayColor(srec.specular, bgColor, world, lights, depth-1, rng).MulVec(srec.attenuation).Add(emitted)
 }
 
 type RectXY struct {
@@ -169,10 +235,11 @@ type RectXY struct {
 	x1, y1 float64
 	k      float64
 	Material
+	hittableNoPdf
 }
 
 func MakeRectXY(x0, y0, x1, y1, k float64, m Material) *RectXY {
-	return &RectXY{x0, y0, x1, y1, k, m}
+	return &RectXY{x0, y0, x1, y1, k, m, hittableNoPdf{}}
 }
 
 func (this *RectXY) boundingBox(t0, t1 float64) (bool, *Aabb) {
@@ -232,15 +299,32 @@ func (this *RectXZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }
 
+func (this *RectXZ) pdfValue(origin *Point3, v *Vec3) float64 {
+	hit, rec := this.hit(MakeRayFromDirection(origin, v, 0), 0.001, 10000)
+	if !hit {
+		return 0.0
+	}
+	area := (this.x1 - this.x0) * (this.z1 - this.z0)
+	distance2 := rec.t * rec.t
+	cosine := Abs(Dot(v, rec.n))
+	return distance2 / (cosine * area)
+}
+
+func (this *RectXZ) random(origin *Point3, rng *RandExt) *Vec3 {
+	randomPoint := &Point3{ rng.Between(this.x0, this.x1), this.k, rng.Between(this.z0, this.z1) }
+	return GetDirection(origin, randomPoint)
+}
+
 type RectYZ struct {
 	y0, z0 float64
 	y1, z1 float64
 	k      float64
 	Material
+	hittableNoPdf
 }
 
 func MakeRectYZ(y0, z0, y1, z1, k float64, m Material) *RectYZ {
-	return &RectYZ{y0, z0, y1, z1, k, m}
+	return &RectYZ{y0, z0, y1, z1, k, m, hittableNoPdf{}}
 }
 
 func (this *RectYZ) boundingBox(t0, t1 float64) (bool, *Aabb) {
@@ -269,6 +353,7 @@ func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 type Box struct {
 	min, max *Point3
 	sides HittableList
+	hittableNoPdf
 }
 
 func (this *Box) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
@@ -290,7 +375,7 @@ func MakeBox(p0, p1 *Point3, m Material) *Box {
 			MakeRectYZ(p0.Y, p0.Z, p1.Y, p1.Z, p0.X, m),
 		},
 	}
-	return &Box{p0, p1, sides}
+	return &Box{p0, p1, sides, hittableNoPdf{}}
 }
 
 type Translate struct {
@@ -319,11 +404,20 @@ func MakeTranslate(obj Hittable, displacement *Vec3) *Translate {
 	return &Translate{obj, displacement}
 }
 
+func (this *Translate) pdfValue(origin *Point3, v *Vec3) float64 {
+	return this.obj.pdfValue(origin.Move(this.offset), v)
+}
+
+func (this *Translate) random(origin *Point3, rng *RandExt) *Vec3 {
+	return this.obj.random(origin.Move(this.offset), rng)
+}
+
 type RotateY struct {
 	obj    Hittable
 	sinTheta, cosTheta float64
 	hasBox bool
 	bbox   *Aabb
+	hittableNoPdf
 }
 
 func MakeRotateY(obj Hittable, angle float64) *RotateY {
@@ -354,7 +448,7 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 		}
 	}
 	bbox := Aabb{&min, &max}
-	return &RotateY{obj, sinTheta, cosTheta, hasBox, &bbox}
+	return &RotateY{obj, sinTheta, cosTheta, hasBox, &bbox, hittableNoPdf{}}
 }
 
 func (this *RotateY) boundingBox(t0, t1 float64) (bool, *Aabb) {
@@ -390,4 +484,26 @@ func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	normal.Z = -this.sinTheta*rec.n.X + this.cosTheta*rec.n.Z
 
 	return true, MakeHitRecord(rotated, rec.t, &p, &normal, rec.Material, rec.u, rec.v)
+}
+
+type FlipFace struct {
+	obj    Hittable
+	hittableNoPdf
+}
+
+func (this *FlipFace) boundingBox(t0, t1 float64) (bool, *Aabb) {
+	return this.obj.boundingBox(t0, t1)
+}
+
+func (this *FlipFace) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
+	hit, rec := this.obj.hit(r, tMin, tMax)
+	if !hit {
+		return false, nil
+	}
+	rec.frontFace = !rec.frontFace
+	return hit, rec
+}
+
+func MakeFlipFace(obj Hittable) *FlipFace {
+	return &FlipFace{ obj, hittableNoPdf{} }
 }

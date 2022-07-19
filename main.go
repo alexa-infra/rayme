@@ -28,6 +28,7 @@ var (
 	vfov                     = 20.0
 	aperture                 = 0.0
 	world           Hittable = nil
+	lights          Hittable = nil
 	bgColor         *Vec3    = nil
 	aspectRatio              = 16.0 / 9.0
 	imageWidth               = 400
@@ -49,12 +50,12 @@ func main() {
 		imageWidth = 1200
 		samplesPerPixel = 32
 	} else if *sceneID == 1 {
-		world = twoSpheresScene()
+		world, lights = twoSpheresScene()
 		lookFrom = &Point3{13, 7, 3}
 		lookAt = &Point3{0, 1, 0}
 		vfov = 30.0
 		aperture = 0.0
-		samplesPerPixel = 16
+		samplesPerPixel = 128
 		imageWidth = 640
 		bgColor = &Vec3{0.3, 0.3, 0.3}
 	} else if *sceneID == 2 {
@@ -64,14 +65,14 @@ func main() {
 		vfov = 20.0
 		bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else if *sceneID == 3 {
-		world = simpleLight()
+		world, lights = simpleLight()
 		lookFrom = &Point3{26, 3, 6}
 		lookAt = &Point3{0, 0, 0}
 		vfov = 20.0
 		aperture = 0.0
 		bgColor = &Vec3{0.0, 0.0, 0.0}
 	} else if *sceneID == 4 {
-		world = cornellBox()
+		world, lights = cornellBox()
 		lookFrom = &Point3{278, 278, -800}
 		lookAt = &Point3{278, 278, 0}
 		vfov = 40.0
@@ -79,16 +80,13 @@ func main() {
 		bgColor = &Vec3{0.0, 0.0, 0.0}
 		aspectRatio = 1.0
 		imageWidth = 500
-		samplesPerPixel = 32
+		samplesPerPixel = 10
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
 	}
-	samples := []*Vec3{}
-	for i := 0; i < samplesPerPixel / 2; i++ {
-		samples = append(samples, &Vec3{0.0, 0.0, 0.0})
-	}
-	for i := 0; i < samplesPerPixel / 2; i++ {
+	samples := []*Vec3{&Vec3{0.0, 0.0, 0.0}}
+	for i := 0; i < samplesPerPixel; i++ {
 		samples = append(samples, rng.RandomInUnitDisk())
 	}
 	camera := MakeCamera(lookFrom, lookAt, &Vec3{0, 1, 0}, vfov, aspectRatio, aperture, distToFocus, 0.0, 1.0)
@@ -116,7 +114,7 @@ func main() {
 				u := (float64(p.x) + s.X) / float64(imageWidth-1)
 				v := (float64(p.y) + s.Y) / float64(imageHeight-1)
 				ray := camera.CastRay(u, v, rng1)
-				rayColor := GetRayColor(ray, bgColor, world, maxDepth, rng1)
+				rayColor := GetRayColor(ray, bgColor, world, lights, maxDepth, rng1)
 				sumColor = sumColor.Add(rayColor)
 			}
 			sumColor = &Vec3{
@@ -203,21 +201,22 @@ func randomScene() Hittable {
 	return bvh
 }
 
-func twoSpheresScene() Hittable {
+func twoSpheresScene() (world, light Hittable) {
 	red := MakeMetal(&Vec3{0.9, 0.1, 0.1}, 0.1)
 	blue := MakeMetal(&Vec3{0.1, 0.1, 0.9}, 0.1)
 	checker := MakeCheckerTexture3d(1.0, &Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
 	material2 := MakeLambertianTexture(checker)
-	light := MakeDiffuseLightFromColor(&Vec3{15, 15, 15})
-	world := &HittableList{
+	lightMat := MakeDiffuseLightFromColor(&Vec3{15, 15, 15})
+	light = &Sphere{&Point3{3.0, 25, 1.0}, 3.0, lightMat}
+	world = &HittableList{
 		[]Hittable{
 			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material2},
 			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, red},
 			&Sphere{&Point3{3.0, 1, -1.0}, 1.0, blue},
-			&Sphere{&Point3{3.0, 25, 1.0}, 3.0, light},
+			light,
 		},
 	}
-	return world
+	return
 }
 
 func earthSphereScene() Hittable {
@@ -234,34 +233,35 @@ func earthSphereScene() Hittable {
 	return world
 }
 
-func simpleLight() Hittable {
+func simpleLight() (world, lights Hittable) {
 	noise := MakeNoiseTexture(4.0, rng)
 	material1 := MakeLambertianTexture(noise)
 	difflight := MakeDiffuseLightFromColor(&Vec3{4, 4, 4})
-	world := &HittableList{
+	lights = MakeRectXY(5, 1, 5, 3, -2, difflight)
+	world = &HittableList{
 		[]Hittable{
 			&Sphere{&Point3{0.0, -1000, 0.0}, 1000.0, material1},
 			&Sphere{&Point3{0.0, 2, 0.0}, 2.0, material1},
-			MakeRectXY(3, 1, 5, 3, -2, difflight),
+			lights,
 		},
 	}
-	return world
+	return
 }
 
-func cornellBox() Hittable {
+func cornellBox() (world, lights Hittable) {
 	red := MakeLambertianSolidColor(&Vec3{0.65, 0.05, 0.05})
 	white := MakeLambertianSolidColor(&Vec3{0.73, 0.73, 0.73})
 	green := MakeLambertianSolidColor(&Vec3{0.12, 0.45, 0.15})
 	light := MakeDiffuseLightFromColor(&Vec3{15, 15, 15})
 
-	world := &HittableList{
+	world = &HittableList{
 		[]Hittable{
 			MakeRectYZ(0, 0, 555, 555, 555, green),
 			MakeRectYZ(0, 0, 555, 555, 0, red),
 			MakeRectXZ(0, 0, 555, 555, 555, white),
 			MakeRectXZ(0, 0, 555, 555, 0, white),
 			MakeRectXY(0, 0, 555, 555, 555, white),
-			MakeRectXZ(213, 227, 343, 332, 554, light),
+			MakeFlipFace(MakeRectXZ(213, 227, 343, 332, 554, light)),
 			MakeTranslate(
 				MakeRotateY(
 					MakeBox(&Point3{0, 0, 0}, &Point3{165, 330, 165}, white),
@@ -278,5 +278,10 @@ func cornellBox() Hittable {
 			),
 		},
 	}
-	return world
+	lights = &HittableList{
+		[]Hittable{
+			MakeRectXZ(213, 227, 343, 332, 554, nil),
+		},
+	}
+	return
 }
