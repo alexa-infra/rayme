@@ -15,18 +15,18 @@ type MixturePdf struct {
 }
 
 func (this *MixturePdf) value(direction *Vec3) float64 {
-	return 0.5 * this.a.value(direction) + 0.5 * this.b.value(direction)
+	return 0.5*this.a.value(direction) + 0.5*this.b.value(direction)
 }
 
 func (this *MixturePdf) generate(rng *RandExt) *Vec3 {
-	if (rng.Float64() < 0.5) {
+	if rng.Float64() < 0.5 {
 		return this.a.generate(rng)
 	}
 	return this.b.generate(rng)
 }
 
 func MakeMixturePdf(a, b Pdf) *MixturePdf {
-	return &MixturePdf{ a, b }
+	return &MixturePdf{a, b}
 }
 
 type CosinePdf struct {
@@ -46,11 +46,11 @@ func (this *CosinePdf) generate(rng *RandExt) *Vec3 {
 }
 
 func MakeCosinePdf(w *Vec3) *CosinePdf {
-	return &CosinePdf{ BuildOnbFromW(w) }
+	return &CosinePdf{BuildOnbFromW(w)}
 }
 
 type HittablePdf struct {
-	obj Hittable
+	obj    Hittable
 	origin *Point3
 }
 
@@ -63,5 +63,5 @@ func (this *HittablePdf) generate(rng *RandExt) *Vec3 {
 }
 
 func MakeHittablePdf(obj Hittable, origin *Point3) *HittablePdf {
-	return &HittablePdf{ obj, origin }
+	return &HittablePdf{obj, origin}
 }

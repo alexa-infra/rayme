@@ -29,14 +29,14 @@ type Hittable interface {
 	random(origin *Point3, rng *RandExt) *Vec3
 }
 
-type hittableNoPdf struct {}
+type hittableNoPdf struct{}
 
 func (this *hittableNoPdf) pdfValue(origin *Point3, v *Vec3) float64 {
 	return 0.0
 }
 
 func (this *hittableNoPdf) random(origin *Point3, rng *RandExt) *Vec3 {
-	return &Vec3{ 1, 0, 0 }
+	return &Vec3{1, 0, 0}
 }
 
 type Sphere struct {
@@ -100,7 +100,7 @@ func (this *Sphere) pdfValue(origin *Point3, v *Vec3) float64 {
 		return 0.0
 	}
 	distance2 := GetDirection(origin, this.Center).Length2()
-	cosThetaMax := math.Sqrt(1 - this.Radius * this.Radius / distance2)
+	cosThetaMax := math.Sqrt(1 - this.Radius*this.Radius/distance2)
 	solidAngle := 2 * math.Pi * (1 - cosThetaMax)
 	return 1 / solidAngle
 }
@@ -147,7 +147,7 @@ func (this *MovingSphere) pdfValue(origin *Point3, v *Vec3) float64 {
 }
 
 func (this *MovingSphere) random(origin *Point3, rng *RandExt) *Vec3 {
-	return &Vec3{ 1, 0, 0 }
+	return &Vec3{1, 0, 0}
 }
 
 type HittableList struct {
@@ -311,7 +311,7 @@ func (this *RectXZ) pdfValue(origin *Point3, v *Vec3) float64 {
 }
 
 func (this *RectXZ) random(origin *Point3, rng *RandExt) *Vec3 {
-	randomPoint := &Point3{ rng.Between(this.x0, this.x1), this.k, rng.Between(this.z0, this.z1) }
+	randomPoint := &Point3{rng.Between(this.x0, this.x1), this.k, rng.Between(this.z0, this.z1)}
 	return GetDirection(origin, randomPoint)
 }
 
@@ -352,7 +352,7 @@ func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 
 type Box struct {
 	min, max *Point3
-	sides HittableList
+	sides    HittableList
 	hittableNoPdf
 }
 
@@ -413,10 +413,10 @@ func (this *Translate) random(origin *Point3, rng *RandExt) *Vec3 {
 }
 
 type RotateY struct {
-	obj    Hittable
+	obj                Hittable
 	sinTheta, cosTheta float64
-	hasBox bool
-	bbox   *Aabb
+	hasBox             bool
+	bbox               *Aabb
 	hittableNoPdf
 }
 
@@ -432,9 +432,9 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 2; j++ {
 			for k := 0; k < 2; k++ {
-				x := float64(i) * box.Max.X + (1 - float64(i)) * box.Min.X
-				y := float64(j) * box.Max.Y + (1 - float64(j)) * box.Min.Y
-				z := float64(k) * box.Max.Z + (1 - float64(k)) * box.Min.Z
+				x := float64(i)*box.Max.X + (1-float64(i))*box.Min.X
+				y := float64(j)*box.Max.Y + (1-float64(j))*box.Min.Y
+				z := float64(k)*box.Max.Z + (1-float64(k))*box.Min.Z
 				nx := cosTheta*x + sinTheta*z
 				nz := -sinTheta*x + cosTheta*z
 				p := Point3{nx, y, nz}
@@ -487,7 +487,7 @@ func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
 }
 
 type FlipFace struct {
-	obj    Hittable
+	obj Hittable
 	hittableNoPdf
 }
 
@@ -505,5 +505,5 @@ func (this *FlipFace) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
 }
 
 func MakeFlipFace(obj Hittable) *FlipFace {
-	return &FlipFace{ obj, hittableNoPdf{} }
+	return &FlipFace{obj, hittableNoPdf{}}
 }

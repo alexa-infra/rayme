@@ -10,8 +10,8 @@ import (
 	"log"
 	"math"
 	"os"
-	"time"
 	"sync"
+	"time"
 )
 
 const (
@@ -98,14 +98,14 @@ func main() {
 	scale := 1.0 / float64(len(samples))
 	zero := Vec3{0, 0, 0}
 	type Pixel struct {
-		x, y  int
+		x, y int
 	}
 	in := make(chan Pixel)
 	var wg sync.WaitGroup
 	renderPixel := func(workerId int) {
 		rng1 := MakeRandExt(seed + workerId + 1)
 		for {
-			p, ok := <- in
+			p, ok := <-in
 			if !ok {
 				break
 			}
@@ -267,14 +267,14 @@ func cornellBox() (world, lights Hittable) {
 					MakeBox(&Point3{0, 0, 0}, &Point3{165, 330, 165}, white),
 					15,
 				),
-				&Vec3{265,0,295},
+				&Vec3{265, 0, 295},
 			),
 			MakeTranslate(
 				MakeRotateY(
-					MakeBox(&Point3{0, 0, 0}, &Point3{165,165,165}, white),
+					MakeBox(&Point3{0, 0, 0}, &Point3{165, 165, 165}, white),
 					-18,
 				),
-				&Vec3{130,0,65},
+				&Vec3{130, 0, 65},
 			),
 		},
 	}

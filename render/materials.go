@@ -8,10 +8,10 @@ import (
 var noColor *Vec3 = &Vec3{0, 0, 0}
 
 type ScatterRecord struct {
-	specular *Ray
-	isSpecular bool
+	specular    *Ray
+	isSpecular  bool
 	attenuation *Vec3
-	pdf float64
+	pdf         float64
 }
 
 type Material interface {
@@ -20,7 +20,7 @@ type Material interface {
 	ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64
 }
 
-type materialNoPdf struct {}
+type materialNoPdf struct{}
 
 func (this *materialNoPdf) ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64 {
 	return 0.0
@@ -45,7 +45,7 @@ func (this *Lambertian) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Sc
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
 	attenuation := this.albedo.GetValue(rec.u, rec.v, rec.p)
 	pdf := Dot(onb.W, scattered.Direction) / math.Pi
-	return true, &ScatterRecord{ scattered, false, attenuation, pdf }
+	return true, &ScatterRecord{scattered, false, attenuation, pdf}
 }
 
 func (this *Lambertian) ScatteringPDF(r *Ray, rec *HitRecord, scattered *Ray) float64 {
@@ -79,7 +79,7 @@ func (this *Metal) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Scatter
 	fuzz := rng.RandomInUnitSphere().Mul(this.fuzz)
 	reflected := reflect(r.Direction, rec.n).Add(fuzz)
 	scattered := MakeRayFromDirection(rec.p, reflected, r.Time)
-	return Dot(scattered.Direction, rec.n) > 0, &ScatterRecord{ scattered, true, this.albedo, 0.0 }
+	return Dot(scattered.Direction, rec.n) > 0, &ScatterRecord{scattered, true, this.albedo, 0.0}
 }
 
 func (this *Metal) Emitted(u, v float64, p *Point3) *Vec3 {
@@ -125,7 +125,7 @@ func (this *Dielectric) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *Sc
 		dir = refract(unitDirection, rec.n, ratio)
 	}
 	scattered := MakeRayFromDirection(rec.p, dir, r.Time)
-	return true, &ScatterRecord{ scattered, true, attenuation, 0.0 }
+	return true, &ScatterRecord{scattered, true, attenuation, 0.0}
 }
 
 func (this *Dielectric) Emitted(u, v float64, p *Point3) *Vec3 {
@@ -147,7 +147,7 @@ func MakeDiffuseLightFromColor(c *Vec3) *DiffuseLight {
 }
 
 func (this *DiffuseLight) Scatter(r *Ray, rec *HitRecord, rng *RandExt) (bool, *ScatterRecord) {
-	return false, &ScatterRecord{ nil, false, nil, 0.0 }
+	return false, &ScatterRecord{nil, false, nil, 0.0}
 }
 
 func (this *DiffuseLight) Emitted(u, v float64, p *Point3) *Vec3 {
