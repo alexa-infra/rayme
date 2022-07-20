@@ -235,16 +235,15 @@ type RectXY struct {
 	x1, y1 float64
 	k      float64
 	Material
-	hittableNoPdf
 }
 
 func MakeRectXY(x0, y0, x1, y1, k float64, m Material) *RectXY {
-	return &RectXY{x0, y0, x1, y1, k, m, hittableNoPdf{}}
+	return &RectXY{x0, y0, x1, y1, k, m}
 }
 
 func (this *RectXY) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{this.x0, this.y0, this.k - 0.0001}
-	b := &Point3{this.x1, this.y1, this.k + 0.0001}
+	a := MakePoint3(this.x0, this.y0, this.k-0.0001)
+	b := MakePoint3(this.x1, this.y1, this.k+0.0001)
 	return true, &Aabb{a, b}
 }
 
@@ -265,6 +264,22 @@ func (this *RectXY) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
 }
 
+func (this *RectXY) pdfValue(origin *Point3, v *Vec3) float64 {
+	hit, rec := this.hit(MakeRayFromDirection(origin, v, 0), 0.001, 10000)
+	if !hit {
+		return 0.0
+	}
+	area := (this.x1 - this.x0) * (this.y1 - this.y0)
+	distance2 := rec.t * rec.t
+	cosine := Abs(Dot(v, rec.n))
+	return distance2 / (cosine * area)
+}
+
+func (this *RectXY) random(origin *Point3, rng *RandExt) *Vec3 {
+	randomPoint := MakePoint3(rng.Between(this.x0, this.x1), rng.Between(this.y0, this.y1), this.k)
+	return GetDirection(origin, randomPoint)
+}
+
 type RectXZ struct {
 	x0, z0 float64
 	x1, z1 float64
@@ -277,8 +292,8 @@ func MakeRectXZ(x0, z0, x1, z1, k float64, m Material) *RectXZ {
 }
 
 func (this *RectXZ) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{this.x0, this.z0, this.k - 0.0001}
-	b := &Point3{this.x1, this.z1, this.k + 0.0001}
+	a := MakePoint3(this.x0, this.k-0.0001, this.z0)
+	b := MakePoint3(this.x1, this.k+0.0001, this.z1)
 	return true, &Aabb{a, b}
 }
 
@@ -311,7 +326,7 @@ func (this *RectXZ) pdfValue(origin *Point3, v *Vec3) float64 {
 }
 
 func (this *RectXZ) random(origin *Point3, rng *RandExt) *Vec3 {
-	randomPoint := &Point3{rng.Between(this.x0, this.x1), this.k, rng.Between(this.z0, this.z1)}
+	randomPoint := MakePoint3(rng.Between(this.x0, this.x1), this.k, rng.Between(this.z0, this.z1))
 	return GetDirection(origin, randomPoint)
 }
 
@@ -320,16 +335,15 @@ type RectYZ struct {
 	y1, z1 float64
 	k      float64
 	Material
-	hittableNoPdf
 }
 
 func MakeRectYZ(y0, z0, y1, z1, k float64, m Material) *RectYZ {
-	return &RectYZ{y0, z0, y1, z1, k, m, hittableNoPdf{}}
+	return &RectYZ{y0, z0, y1, z1, k, m}
 }
 
 func (this *RectYZ) boundingBox(t0, t1 float64) (bool, *Aabb) {
-	a := &Point3{this.y0, this.z0, this.k - 0.0001}
-	b := &Point3{this.y1, this.z1, this.k + 0.0001}
+	a := MakePoint3(this.k-1.0001, this.y0, this.z0)
+	b := MakePoint3(this.k+0.0001, this.y1, this.z1)
 	return true, &Aabb{a, b}
 }
 
@@ -348,6 +362,22 @@ func (this *RectYZ) hit(ray *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	v := (z - this.z0) / (this.z1 - this.z0)
 	normal := &Vec3{1, 0, 0}
 	return true, MakeHitRecord(ray, t, hitPoint, normal, this.Material, u, v)
+}
+
+func (this *RectYZ) pdfValue(origin *Point3, v *Vec3) float64 {
+	hit, rec := this.hit(MakeRayFromDirection(origin, v, 0), 0.001, 10000)
+	if !hit {
+		return 0.0
+	}
+	area := (this.y1 - this.y0) * (this.z1 - this.z0)
+	distance2 := rec.t * rec.t
+	cosine := Abs(Dot(v, rec.n))
+	return distance2 / (cosine * area)
+}
+
+func (this *RectYZ) random(origin *Point3, rng *RandExt) *Vec3 {
+	randomPoint := MakePoint3(this.k, rng.Between(this.y0, this.y1), rng.Between(this.z0, this.z1))
+	return GetDirection(origin, randomPoint)
 }
 
 type Box struct {
@@ -427,8 +457,8 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 	hasBox, box := obj.boundingBox(0, 1)
 	inf := math.Inf(1)
 	ninf := math.Inf(-1)
-	min := Point3{inf, inf, inf}
-	max := Point3{ninf, ninf, ninf}
+	min := MakePoint3(inf, inf, inf)
+	max := MakePoint3(ninf, ninf, ninf)
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 2; j++ {
 			for k := 0; k < 2; k++ {
@@ -437,7 +467,7 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 				z := float64(k)*box.Max.Z + (1-float64(k))*box.Min.Z
 				nx := cosTheta*x + sinTheta*z
 				nz := -sinTheta*x + cosTheta*z
-				p := Point3{nx, y, nz}
+				p := MakePoint3(nx, y, nz)
 				min.X = Min(min.X, p.X)
 				max.X = Max(max.X, p.X)
 				min.Y = Min(min.Y, p.Y)
@@ -447,7 +477,7 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 			}
 		}
 	}
-	bbox := Aabb{&min, &max}
+	bbox := Aabb{min, max}
 	return &RotateY{obj, sinTheta, cosTheta, hasBox, &bbox, hittableNoPdf{}}
 }
 
@@ -456,8 +486,8 @@ func (this *RotateY) boundingBox(t0, t1 float64) (bool, *Aabb) {
 }
 
 func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
-	origin := Point3{0, 0, 0}
-	direction := Vec3{0, 0, 0}
+	origin := MakePoint3(0, 0, 0)
+	direction := &Vec3{0, 0, 0}
 
 	origin.X = this.cosTheta*r.Origin.X - this.sinTheta*r.Origin.Z
 	origin.Y = r.Origin.Y
@@ -467,13 +497,13 @@ func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	direction.Y = r.Direction.Y
 	direction.Z = this.sinTheta*r.Direction.X + this.cosTheta*r.Direction.Z
 
-	rotated := MakeRayFromDirection(&origin, &direction, r.Time)
+	rotated := MakeRayFromDirection(origin, direction, r.Time)
 	hit, rec := this.obj.hit(rotated, tMin, tMax)
 	if !hit {
 		return false, nil
 	}
-	p := Point3{0, 0, 0}
-	normal := Vec3{0, 0, 0}
+	p := MakePoint3(0, 0, 0)
+	normal := &Vec3{0, 0, 0}
 
 	p.X = this.cosTheta*rec.p.X + this.sinTheta*rec.p.Z
 	p.Y = rec.p.Y
@@ -483,7 +513,7 @@ func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
 	normal.Y = rec.n.Y
 	normal.Z = -this.sinTheta*rec.n.X + this.cosTheta*rec.n.Z
 
-	return true, MakeHitRecord(rotated, rec.t, &p, &normal, rec.Material, rec.u, rec.v)
+	return true, MakeHitRecord(rotated, rec.t, p, normal, rec.Material, rec.u, rec.v)
 }
 
 type FlipFace struct {

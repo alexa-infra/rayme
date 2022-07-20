@@ -62,11 +62,10 @@ func trilinearInterp(c [][][]*Vec3, u, v, w float64) float64 {
 func (this *Perlin) Turb(p *Point3, depth int) float64 {
 	acc := 0.0
 	weight := 1.0
-	ps := &Point3{p.X, p.Y, p.Z}
 	for i := 0; i < depth; i++ {
-		acc += weight * this.Noise(ps)
+		acc += weight * this.Noise(p)
 		weight *= 0.5
-		ps = &Point3{p.X * 2.0, p.Y * 2.0, p.Z * 2.0}
+		p = p.Mul(2.0).AsPoint3()
 	}
 	return Abs(acc)
 }

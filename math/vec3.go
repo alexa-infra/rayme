@@ -22,6 +22,10 @@ func (v *Vec3) AsColor() color.Color {
 	}
 }
 
+func (v *Vec3) AsPoint3() *Point3 {
+	return MakePoint3(v.X, v.Y, v.Z)
+}
+
 func (v *Vec3) Mul(t float64) *Vec3 {
 	return &Vec3{v.X * t, v.Y * t, v.Z * t}
 }

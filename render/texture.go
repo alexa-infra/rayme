@@ -71,7 +71,7 @@ func MakeNoiseTexture(scale float64, r *RandExt) *NoiseTexture {
 }
 
 func (this *NoiseTexture) GetValue(u, v float64, p *Point3) *Vec3 {
-	ps := &Point3{p.X * this.scale, p.Y * this.scale, p.Z * this.scale}
+	ps := p.Mul(this.scale).AsPoint3()
 	noise := this.perlin.Turb(ps, 7)
 	return &Vec3{noise, noise, noise}
 }

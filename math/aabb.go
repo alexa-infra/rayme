@@ -36,7 +36,7 @@ func (self *Aabb) Hit(ray *Ray, tMin, tMax float64) bool {
 }
 
 func SurroundingBox(box0, box1 *Aabb) *Aabb {
-	small := &Point3{Min(box0.Min.X, box1.Min.X), Min(box0.Min.Y, box1.Min.Y), Min(box0.Min.Z, box1.Min.Z)}
-	big := &Point3{Max(box0.Max.X, box1.Max.X), Max(box0.Max.Y, box1.Max.Y), Max(box0.Max.Z, box1.Max.Z)}
+	small := MakePoint3(Min(box0.Min.X, box1.Min.X), Min(box0.Min.Y, box1.Min.Y), Min(box0.Min.Z, box1.Min.Z))
+	big := MakePoint3(Max(box0.Max.X, box1.Max.X), Max(box0.Max.Y, box1.Max.Y), Max(box0.Max.Z, box1.Max.Z))
 	return &Aabb{small, big}
 }
