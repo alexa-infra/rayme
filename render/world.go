@@ -455,10 +455,7 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 	sinTheta := math.Sin(radians)
 	cosTheta := math.Cos(radians)
 	hasBox, box := obj.boundingBox(0, 1)
-	inf := math.Inf(1)
-	ninf := math.Inf(-1)
-	min := MakePoint3(inf, inf, inf)
-	max := MakePoint3(ninf, ninf, ninf)
+	aabbBuilder := MakeAabbBuilder()
 	for i := 0; i < 2; i++ {
 		for j := 0; j < 2; j++ {
 			for k := 0; k < 2; k++ {
@@ -468,17 +465,12 @@ func MakeRotateY(obj Hittable, angle float64) *RotateY {
 				nx := cosTheta*x + sinTheta*z
 				nz := -sinTheta*x + cosTheta*z
 				p := MakePoint3(nx, y, nz)
-				min.X = Min(min.X, p.X)
-				max.X = Max(max.X, p.X)
-				min.Y = Min(min.Y, p.Y)
-				max.Y = Max(max.Y, p.Y)
-				min.Z = Min(min.Z, p.Z)
-				max.Z = Max(max.Z, p.Z)
+				aabbBuilder.AddPoint(p)
 			}
 		}
 	}
-	bbox := Aabb{min, max}
-	return &RotateY{obj, sinTheta, cosTheta, hasBox, &bbox, hittableNoPdf{}}
+	bbox := aabbBuilder.GetBox()
+	return &RotateY{obj, sinTheta, cosTheta, hasBox, bbox, hittableNoPdf{}}
 }
 
 func (this *RotateY) boundingBox(t0, t1 float64) (bool, *Aabb) {

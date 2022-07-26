@@ -1,5 +1,7 @@
 package math
 
+import "math"
+
 type Aabb struct {
 	Min, Max *Point3
 }
@@ -39,4 +41,35 @@ func SurroundingBox(box0, box1 *Aabb) *Aabb {
 	small := MakePoint3(Min(box0.Min.X, box1.Min.X), Min(box0.Min.Y, box1.Min.Y), Min(box0.Min.Z, box1.Min.Z))
 	big := MakePoint3(Max(box0.Max.X, box1.Max.X), Max(box0.Max.Y, box1.Max.Y), Max(box0.Max.Z, box1.Max.Z))
 	return &Aabb{small, big}
+}
+
+type AabbBuilder struct {
+	min, max *Point3
+	n int
+}
+
+func MakeAabbBuilder() *AabbBuilder {
+	inf := math.Inf(1)
+	ninf := math.Inf(-1)
+	min := MakePoint3(inf, inf, inf)
+	max := MakePoint3(ninf, ninf, ninf)
+	return &AabbBuilder{min, max, 0}
+}
+
+func (this *AabbBuilder) AddPoint(p *Point3) {
+	this.min.X = Min(this.min.X, p.X)
+	this.max.X = Max(this.max.X, p.X)
+	this.min.Y = Min(this.min.Y, p.Y)
+	this.max.Y = Max(this.max.Y, p.Y)
+	this.min.Z = Min(this.min.Z, p.Z)
+	this.max.Z = Max(this.max.Z, p.Z)
+	this.n++
+}
+
+func (this *AabbBuilder) GetBox() *Aabb {
+	if this.n == 0 {
+		p := MakePoint3(0, 0, 0)
+		return &Aabb{p, p}
+	}
+	return &Aabb{this.min, this.max}
 }
