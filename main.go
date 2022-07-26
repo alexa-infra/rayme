@@ -82,6 +82,16 @@ func main() {
 		aspectRatio = 1.0
 		imageWidth = 500
 		samplesPerPixel = 10
+	} else if *sceneID == 5 {
+		world, lights = meshDemo()
+		lookFrom = MakePoint3(8, 6, 6)
+		lookAt = MakePoint3(0, 0, 0)
+		vfov = 20.0
+		aperture = 0.0
+		aspectRatio = 1.0
+		imageWidth = 500
+		bgColor = &Vec3{0.0, 0.0, 0.0}
+		//bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)
@@ -282,6 +292,28 @@ func cornellBox() (world, lights Hittable) {
 	lights = &HittableList{
 		[]Hittable{
 			MakeRectXZ(213, 227, 343, 332, 554, nil),
+		},
+	}
+	return
+}
+
+func meshDemo() (world, lights Hittable) {
+	checker := MakeCheckerTexture3d(1.0, &Vec3{0.2, 0.3, 0.1}, &Vec3{0.9, 0.9, 0.9})
+	material1 := MakeLambertianTexture(checker)
+	red := MakeMetal(&Vec3{0.9, 0.1, 0.1}, 0.0)
+	difflight := MakeDiffuseLightFromColor(&Vec3{4, 4, 4})
+	mesh := MakeSphereMesh(red, 1, 90, rng)
+	lights = &HittableList{
+		[]Hittable{
+			MakeRectXZ(-10, -10, 10, 10, 25, nil),
+		},
+	}
+	world = &HittableList{
+		[]Hittable{
+			&Sphere{MakePoint3(0.0, -1000, 0.0), 1000.0, material1},
+			&Sphere{MakePoint3(2.0, 0.5, 1.0), 0.5, red},
+			MakeTranslate(mesh, &Vec3{0.5, 1, 1}),
+			MakeFlipFace(MakeRectXZ(-10, -10, 10, 10, 25, difflight)),
 		},
 	}
 	return
