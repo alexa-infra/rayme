@@ -212,7 +212,7 @@ func GetRayColor(r *Ray, bgColor *Vec3, world Hittable, lights Hittable, depth i
 	if rec.frontFace {
 		emitted = rec.Material.Emitted(rec.u, rec.v, rec.p)
 	} else {
-		emitted = &Vec3{0, 0, 0}
+		emitted = noColor
 	}
 	scattered, srec := rec.Material.Scatter(r, rec, rng)
 	if !scattered {
@@ -478,33 +478,33 @@ func (this *RotateY) boundingBox(t0, t1 float64) (bool, *Aabb) {
 }
 
 func (this *RotateY) hit(r *Ray, tMin, tMax float64) (bool, *HitRecord) {
-	origin := MakePoint3(0, 0, 0)
-	direction := &Vec3{0, 0, 0}
-
-	origin.X = this.cosTheta*r.Origin.X - this.sinTheta*r.Origin.Z
-	origin.Y = r.Origin.Y
-	origin.Z = this.sinTheta*r.Origin.X + this.cosTheta*r.Origin.Z
-
-	direction.X = this.cosTheta*r.Direction.X - this.sinTheta*r.Direction.Z
-	direction.Y = r.Direction.Y
-	direction.Z = this.sinTheta*r.Direction.X + this.cosTheta*r.Direction.Z
+	origin := MakePoint3(
+		this.cosTheta*r.Origin.X - this.sinTheta*r.Origin.Z,
+		r.Origin.Y,
+		this.sinTheta*r.Origin.X + this.cosTheta*r.Origin.Z,
+	)
+	direction := &Vec3{
+		this.cosTheta*r.Direction.X - this.sinTheta*r.Direction.Z,
+		r.Direction.Y,
+		this.sinTheta*r.Direction.X + this.cosTheta*r.Direction.Z,
+	}
 
 	rotated := MakeRayFromDirection(origin, direction, r.Time)
 	hit, rec := this.obj.hit(rotated, tMin, tMax)
 	if !hit {
 		return false, nil
 	}
-	p := MakePoint3(0, 0, 0)
-	normal := &Vec3{0, 0, 0}
 
-	p.X = this.cosTheta*rec.p.X + this.sinTheta*rec.p.Z
-	p.Y = rec.p.Y
-	p.Z = -this.sinTheta*rec.p.X + this.cosTheta*rec.p.Z
-
-	normal.X = this.cosTheta*rec.n.X + this.sinTheta*rec.n.Z
-	normal.Y = rec.n.Y
-	normal.Z = -this.sinTheta*rec.n.X + this.cosTheta*rec.n.Z
-
+	p := MakePoint3(
+		this.cosTheta*rec.p.X + this.sinTheta*rec.p.Z,
+		rec.p.Y,
+		-this.sinTheta*rec.p.X + this.cosTheta*rec.p.Z,
+	)
+	normal := &Vec3{
+		this.cosTheta*rec.n.X + this.sinTheta*rec.n.Z,
+		rec.n.Y,
+		-this.sinTheta*rec.n.X + this.cosTheta*rec.n.Z,
+	}
 	return true, MakeHitRecord(rotated, rec.t, p, normal, rec.Material, rec.u, rec.v)
 }
 

@@ -27,3 +27,11 @@ func BuildOnbFromW(n *Vec3) *Onb {
 	u = Cross(w, v)
 	return &Onb{u, v, w}
 }
+
+func MakeOnbFromDirection(dir, up *Vec3) *Onb {
+	var u, v, w *Vec3
+	w = dir.Normalize()
+	u = Cross(up, w).Normalize()
+	v = Cross(w, u)
+	return &Onb{u, v, w}
+}

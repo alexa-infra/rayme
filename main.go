@@ -84,14 +84,13 @@ func main() {
 		samplesPerPixel = 10
 	} else if *sceneID == 5 {
 		world, lights = meshDemo()
-		lookFrom = MakePoint3(8, 6, 6)
+		lookFrom = MakePoint3(6, 6, 6)
 		lookAt = MakePoint3(0, 0, 0)
 		vfov = 20.0
 		aperture = 0.0
 		aspectRatio = 1.0
 		imageWidth = 500
 		bgColor = &Vec3{0.0, 0.0, 0.0}
-		//bgColor = &Vec3{0.7, 0.8, 1.0}
 	} else {
 		fmt.Println("unknown sceneID")
 		os.Exit(1)

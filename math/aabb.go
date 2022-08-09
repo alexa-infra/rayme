@@ -45,7 +45,7 @@ func SurroundingBox(box0, box1 *Aabb) *Aabb {
 
 type AabbBuilder struct {
 	min, max *Point3
-	n int
+	n        int
 }
 
 func MakeAabbBuilder() *AabbBuilder {
